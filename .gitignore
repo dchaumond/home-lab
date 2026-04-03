@@ -1,0 +1,17 @@
+# Terraform
+# Ignore tous les fichiers .tfvars peu importe le dossier
+**/*.tfvars
+**/*.tfstate
+**/*.tfstate.backup
+
+# Ignore le dossier de plugins de terraform
+**/terraform/.terraform/
+**/.terraform.lock.hcl
+
+# Ignore l'inventiry ansible  (output tf)
+**/ansible/inventory.yml
+
+# Secrets & Divers
+.env
+*.log
+**/.DS_Store
