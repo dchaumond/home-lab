@@ -1,34 +1,44 @@
 ---
-- name: Configuration de Samba sur le Storage Server
+- name: Configuration de Samba avec fichiers de variables
   hosts: storage_servers
-  gather_facts: yes
+  become: yes
+  vars_files:
+    - secrets.yml
+
   tasks:
     - name: Installation de Samba
       apt:
         name: samba
         state: present
-        update_cache: yes
 
-    - name: Création du répertoire de montage (si absent)
-      file:
-        path: /mnt/public_data
-        state: directory
-        mode: '0775'
+    - name: Création de l'utilisateur système
+      user:
+        name: "{{ s_user }}"
+        shell: /usr/sbin/nologin
+        create_home: no
+        state: present
 
-    - name: Configuration du partage PublicData
+    - name: Mise à jour du mot de passe Samba pour {{ s_user }}
+      shell: "printf '{{ s_pass }}\n{{ s_pass }}\n' | smbpasswd -s -a {{ s_user }}"
+      register: smbpasswd_result
+      changed_when: "'Added user' in smbpasswd_result.stdout or 'Modified user' in smbpasswd_result.stdout"
+
+    - name: Configuration du partage [{{ share_name }}]
       blockinfile:
         path: /etc/samba/smb.conf
         block: |
-          [PublicData]
-             path = /mnt/public_data
+          [{{ share_name }}]
+             path = {{ mount_path }}
              browseable = yes
              read only = no
-             guest ok = yes
+             guest ok = no
+             valid users = {{ s_user }}
              force user = root
+             create mask = 0664
+             directory mask = 0775
         marker: "# {mark} ANSIBLE MANAGED BLOCK"
 
     - name: Redémarrage de Samba
       service:
         name: smbd
         state: restarted
-        enabled: yes

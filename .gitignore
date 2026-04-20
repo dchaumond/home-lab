@@ -11,6 +11,7 @@
 
 # Ignore l'inventiry ansible  (output tf)
 **/ansible/inventory.ini
+**/ansible/secrets.yml
 
 # Secrets & Divers
 .env

@@ -17,6 +17,14 @@ variable "pve_node" {
   type = string
 }
 
+variable "pve_host_ip" {
+  type = string
+}
+
+variable "gw_ip" {
+  type = string
+}
+
 variable "pve_template_storage" {
   type = string
 }
@@ -38,10 +46,6 @@ variable "storage_ct_ip" {
   type = string
 }
 
-variable "storage_ct_gw" {
-  type = string
-}
-
 variable "storage_mount_host" {
   type = string
 }
@@ -56,4 +60,39 @@ variable "storage_root_size" {
 
 variable "storage_ct_root_password" {
   type = string
+}
+
+# --- CONTAINER AI ---
+
+variable "ai_lxc_id" {
+  type        = number
+}
+
+variable "ai_lxc_hostname" {
+  type        = string
+}
+
+variable "ai_lxc_ip" {
+  type        = string
+}
+
+variable "ai_lxc_mac" {
+  type        = string
+}
+
+variable "ai_lxc_root_size" {
+  type = number
+}
+
+variable "ai_lxc_password" {
+  type        = string
+  sensitive   = true
+}
+
+variable "ai_lxc_memory" {
+  type = number
+}
+
+variable "ai_lxc_swap" {
+  type = number
 }
