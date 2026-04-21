@@ -1,0 +1,31 @@
+---
+- name: GPU Passthrough Dynamique (Méthode Script)
+  hosts: pve_host
+  gather_facts: no
+  become: yes
+  vars_files:
+    - secrets.yml
+  tasks:
+    - name: Exécuter le script de configuration Proxmox
+      script: setup_proxmox.sh {{ ai_lxc_id }}
+
+- name: Installation ROCm et Ollama (LXC)
+  hosts: ai_servers
+  gather_facts: no
+  become: yes
+  vars_files:
+    - secrets.yml
+  tasks:
+    - name: Exécuter le script d'installation AI
+      script: setup_lxc_ai.sh {{ hsa_override_version }}
+
+- name: Vérification
+  hosts: pve_host
+  gather_facts: no
+  vars_files:
+    - secrets.yml
+  tasks:
+    - name: Test de calcul GPU final
+      raw: pct exec {{ ai_lxc_id }} -- rocminfo | grep -E "Name:|gfx"
+      register: result
+    - debug: msg="{{ result.stdout }}"
