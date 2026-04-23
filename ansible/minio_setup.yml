@@ -1,0 +1,76 @@
+---
+- name: Setup Docker et MinIO sur LXC Storage
+  hosts: storage_servers
+  become: yes
+  vars_files:
+    - secrets.yml  # Assure-toi d'y ajouter minio_root_user et minio_root_password
+
+  tasks:
+    # --- PHASE 1 : INSTALLATION DOCKER ---
+    - name: Installation des dépendances système
+      apt:
+        name: [ca-certificates, curl, gnupg]
+        state: present
+        update_cache: yes
+
+    - name: Création du dossier pour les clés GPG
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Ajout de la clé GPG officielle de Docker
+      get_url:
+        url: https://download.docker.com/linux/debian/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+
+    - name: Ajout du dépôt Docker
+      apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+
+    - name: Installation de Docker Engine et Plugins
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    # --- PHASE 2 : DEPLOIEMENT MINIO ---
+    - name: Création du dossier de configuration MinIO
+      file:
+        path: /opt/minio
+        state: directory
+        mode: '0755'
+
+    - name: Déploiement du fichier docker-compose.yml
+      copy:
+        dest: /opt/minio/docker-compose.yml
+        content: |
+          services:
+            minio:
+              image: quay.io/minio/minio:latest
+              container_name: minio
+              restart: always
+              ports:
+                - "9000:9000"
+                - "9001:9001"
+              environment:
+                MINIO_ROOT_USER: "{{ minio_root_user }}"
+                MINIO_ROOT_PASSWORD: "{{ minio_root_password }}"
+              volumes:
+                - {{ storage_mount_minio_dest }}:/data
+              command: server /data --console-address ":9001"
+
+    - name: Lancement de MinIO via Docker Compose
+      command:
+        cmd: docker compose up -d
+        chdir: /opt/minio
+      register: minio_output
+      changed_when: "'Started' in minio_output.stdout or 'Created' in minio_output.stdout"

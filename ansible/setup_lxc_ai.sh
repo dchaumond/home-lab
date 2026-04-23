@@ -20,8 +20,10 @@ command -v ollama || curl -fsSL https://ollama.com/install.sh | sh
 # Config Systemd
 mkdir -p /etc/systemd/system/ollama.service.d
 echo -e "[Service]
+LimitSTACK=infinity
 Environment=\"HSA_OVERRIDE_GFX_VERSION=${GFX_VER}\"
 Environment=\"HSA_ENABLE_SDMA=1\"
+Environment="OLLAMA_FLASH_ATTENTION=0"
 Environment=\"OLLAMA_HOST=0.0.0.0\"" > /etc/systemd/system/ollama.service.d/rocm.conf
 
 usermod -a -G video,render root

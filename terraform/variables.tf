@@ -33,6 +33,10 @@ variable "pve_root_password" {
   type = string
 }
 
+variable "ssh_key_homelab" {
+  type        = string
+}
+
 # --- CONTAINER STORAGE (SMB) ---
 variable "storage_ct_id" {
   type = number
@@ -46,11 +50,19 @@ variable "storage_ct_ip" {
   type = string
 }
 
-variable "storage_mount_host" {
+variable "storage_mount_samba_host" {
   type = string
 }
 
-variable "storage_mount_dest" {
+variable "storage_mount_samba_dest" {
+  type = string
+}
+
+variable "storage_mount_minio_host" {
+  type = string
+}
+
+variable "storage_mount_minio_dest" {
   type = string
 }
 
@@ -59,6 +71,10 @@ variable "storage_root_size" {
 }
 
 variable "storage_ct_root_password" {
+  type = string
+}
+
+variable "storage_ct_mac_address" {
   type = string
 }
 

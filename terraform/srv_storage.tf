@@ -2,6 +2,11 @@ resource "proxmox_virtual_environment_container" "srv_storage" {
   node_name = var.pve_node
   vm_id     = var.storage_ct_id
 
+  features {
+    nesting = true
+    keyctl  = true
+  }
+
   initialization {
     hostname = var.storage_ct_hostname
     ip_config {
@@ -11,7 +16,7 @@ resource "proxmox_virtual_environment_container" "srv_storage" {
       }
     }
     user_account {
-      keys = [file("~/.ssh/id_rsa.pub")]
+      keys     = [var.ssh_key_homelab]
       password = var.storage_ct_root_password
     }
   }
@@ -19,6 +24,7 @@ resource "proxmox_virtual_environment_container" "srv_storage" {
   network_interface {
     name   = "eth0"
     bridge = "vmbr0"
+    mac_address = var.storage_ct_mac_address
   }
 
   operating_system {
@@ -34,9 +40,21 @@ resource "proxmox_virtual_environment_container" "srv_storage" {
   }
 
   mount_point {
-    volume = var.storage_mount_host
-    path   = var.storage_mount_dest
+    volume = var.storage_mount_samba_host
+    path   = var.storage_mount_samba_dest
+  }
+
+  mount_point {
+    volume = var.storage_mount_minio_host
+    path   = var.storage_mount_minio_dest
   }
   
   unprivileged = true
+
+  lifecycle {
+    ignore_changes = [
+      initialization[0].user_account, # Empêche le remplacement si la clé ou le pass change
+      initialization[0].ip_config     # Optionnel : évite le kill si tu changes d'IP
+    ]
+  }
 }
