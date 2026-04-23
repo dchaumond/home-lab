@@ -1,0 +1,121 @@
+---
+- name: Configuration de l'utilisateur dch
+  hosts: dev_station
+  become: yes
+  vars_files:
+    - secrets.yml
+  vars:
+    # On fait le pont entre tes noms dans secrets.yml et le playbook
+    target_user: "{{ user_name }}"
+
+  tasks:
+    # --- FIX LXC : Installation de sudo ---
+    - name: "S'assurer que sudo est installé (indispensable pour LXC)"
+      ansible.builtin.apt:
+        name: sudo
+        state: present
+        update_cache: yes  
+
+    - name: "Création de l'utilisateur {{ target_user }}"
+      ansible.builtin.user:
+        name: "{{ target_user }}"
+        shell: /bin/bash
+        groups: sudo,docker
+        append: yes
+        create_home: yes
+
+    - name: "Définition du mot de passe via chpasswd"
+      ansible.builtin.shell: "echo '{{ target_user }}:{{ user_password }}' | chpasswd"
+      no_log: true 
+
+    - name: "Installation de la clé SSH"
+      ansible.builtin.authorized_key:
+        user: "{{ target_user }}"
+        state: present
+        key: "{{ lookup('file', '~/.ssh/id_rsa_dchaumond.pub') }}"
+
+    - name: "Config session RDP"
+      ansible.builtin.copy:
+        content: "startxfce4"
+        dest: "/home/{{ target_user }}/.xsession"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: '0644'
+
+    - name: "Alias VS Code"
+      ansible.builtin.lineinfile:
+        path: "/home/{{ target_user }}/.bashrc"
+        line: "alias vscode='code --no-sandbox'"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+
+    # --- SECTION OUTILS SRE (Terraform) ---
+    - name: "Installer les dépendances pour Terraform"
+      ansible.builtin.apt:
+        name: [gnupg, software-properties-common, curl, git, wget, unzip, jq, htop]
+        state: present
+
+    - name: "Ajouter la clé GPG de HashiCorp"
+      ansible.builtin.apt_key:
+        url: https://apt.releases.hashicorp.com/gpg
+        state: present
+
+    - name: "Ajouter le dépôt Terraform"
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+        state: present
+
+    - name: "Installer Terraform"
+      ansible.builtin.apt:
+        name: terraform
+        state: present
+
+    # --- SECTION KUBECTL ---
+    - name: "Télécharger kubectl"
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/{{ lookup('url', 'https://dl.k8s.io/release/stable.txt') }}/bin/linux/amd64/kubectl"
+        dest: /usr/local/bin/kubectl
+        mode: '0755'
+
+    # --- SECTION PYTHON / ANSIBLE (Installé pour l'utilisateur) ---
+    - name: "Installer Pip pour Python3"
+      ansible.builtin.apt:
+        name: python3-pip
+        state: present
+
+    - name: "Installer Ansible via Pip pour {{ target_user }}"
+      ansible.builtin.pip:
+        name: ansible
+        extra_args: --user
+      become: yes
+      become_user: "{{ target_user }}"
+
+    # --- CONFIGURATION ENVIRONNEMENT ---
+    - name: "Ajouter le PATH et les Alias"
+      ansible.builtin.blockinfile:
+        path: "/home/{{ target_user }}/.bashrc"
+        block: |
+          export PATH=$PATH:$HOME/.local/bin
+          alias vscode='code --no-sandbox'
+          alias browser='google-chrome --no-sandbox'
+          alias tf='terraform'
+          alias k='kubectl'
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+
+    - name: "Création des raccourcis Bureau"
+      ansible.builtin.copy:
+        dest: "/home/{{ target_user }}/Desktop/{{ item.name }}.desktop"
+        content: |
+          [Desktop Entry]
+          Type=Application
+          Name={{ item.label }}
+          Exec={{ item.exec }}
+          Icon={{ item.icon }}
+          Terminal=false
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: '0755'
+      loop:
+        - { name: 'vscode', label: 'VS Code', exec: 'code --no-sandbox', icon: 'vscode' }
+        - { name: 'chromium', label: 'Chromium', exec: 'chromium --no-sandbox', icon: 'chromium' } 

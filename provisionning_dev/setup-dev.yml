@@ -1,0 +1,56 @@
+---
+- name: Setup Dev Station (XFCE + RDP + VS Code)
+  hosts: dev_station
+  become: yes
+  tasks:
+    - name: Mise à jour du cache apt
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Installation de XFCE et XRDP
+      ansible.builtin.apt:
+        name:
+          - xfce4
+          - xfce4-goodies
+          - xrdp
+          - xorg
+          - dbus-x11
+        state: present
+
+    - name: Configurer XRDP pour utiliser XFCE
+      ansible.builtin.copy:
+        content: "startxfce4"
+        dest: /root/.xsession
+        mode: '0644'
+
+    - name: Redémarrer XRDP
+      ansible.builtin.service: # <--- On utilise 'service' au lieu de 'systemctl'
+        name: xrdp
+        state: restarted
+        enabled: yes
+
+    - name: Installation des outils de base
+      ansible.builtin.apt:
+        name:
+          - curl
+          - gpg
+          - git
+          - wget
+          - ca-certificates
+        state: present
+
+    - name: Installation de VS Code
+      ansible.builtin.shell: |
+        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+        install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+        echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
+        rm -f packages.microsoft.gpg
+        apt update && apt install -y code
+      args:
+        creates: /usr/bin/code # Évite de réinstaller si déjà présent
+
+    - name: Installation de Docker
+      ansible.builtin.shell: curl -fsSL https://get.docker.com | sh
+      args:
+        creates: /usr/bin/docker
