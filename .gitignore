@@ -9,11 +9,27 @@
 **/terraform/.terraform/
 **/.terraform.lock.hcl
 
+# Ignore tous les fichiers inventory ou secret
+**/inventory.ini
+**/secrets.yml
+
 # Ignore l'inventiry ansible  (output tf)
 **/ansible/inventory.ini
 **/ansible/secrets.yml
 
 # Secrets & Divers
 .env
+.env.json
 *.log
 **/.DS_Store
+
+# Dossiers de provisionning
+provisionning_nuc/
+provisionning_ryzen/
+
+# Fichiers spécifiques
+Modelfile*
+/opencode.jsonc
+/AGENTS.md
+PLAN-STEP*.md
+update_model.sh

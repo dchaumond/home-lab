@@ -1,0 +1,17 @@
+# minio.service.j2
+[Unit]
+Description=MinIO Object Storage
+Documentation=https://min.io/docs/minio/linux/index.html
+After=network.target
+
+[Service]
+User={{ secrets.minio.root_user }}
+Group=minio
+Environment="MINIO_ROOT_USER={{ secrets.minio.root_user }}"
+Environment="MINIO_ROOT_PASSWORD={{ secrets.minio.root_password }}"
+ExecStart=/usr/local/bin/minio server --console-address ":9001" {{ secrets.minio.storage_mount_minio_dest }}
+Restart=always
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

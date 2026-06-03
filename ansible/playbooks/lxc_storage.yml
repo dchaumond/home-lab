@@ -1,0 +1,5 @@
+- hosts: lxc_storage
+  roles:
+    - common
+    - lxc_base
+    - storage

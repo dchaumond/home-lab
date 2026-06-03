@@ -1,0 +1,59 @@
+---
+- name: Réinitialiser l'environnement APT pour ROCm
+  ansible.builtin.shell: |
+    rm -f /etc/apt/trusted.gpg.d/rocm* 2>/dev/null || true
+    rm -f /usr/share/keyrings/rocm* 2>/dev/null || true
+    rm -f /etc/apt/sources.list.d/rocm.list 2>/dev/null || true
+    apt-key del "$(apt-key list 2>/dev/null | grep -B1 "ROCm" | head -n1 | cut -d'/' -f2 | cut -d' ' -f1)" 2>/dev/null || true
+  args:
+    executable: /bin/bash
+    creates: /etc/apt/trusted.gpg.d/rocm_cleanup_done
+
+- name: Installer les dépendances système (sans mise à jour du cache)
+  ansible.builtin.apt:
+    name:
+      - gpg
+      - curl
+      - software-properties-common
+    state: present
+    update_cache: no
+
+- name: Mettre à jour le cache APT manuellement (avec gestion des erreurs)
+  ansible.builtin.command: apt-get update --allow-releaseinfo-change --allow-unauthenticated
+  register: apt_update_result
+  until: apt_update_result.rc == 0
+  retries: 3
+  delay: 5
+  changed_when: false
+
+- name: Ajouter la clé GPG pour ROCm
+  ansible.builtin.shell: |
+    curl -s https://repo.radeon.com/rocm/rocm.gpg.key | apt-key add -
+  args:
+    creates: /etc/apt/trusted.gpg.d/rocm.gpg.asc
+
+- name: Ajouter le dépôt ROCm {{ rocm_version }}
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64] https://repo.radeon.com/rocm/apt/{{ rocm_version }} noble main"
+    state: present
+    filename: rocm
+    update_cache: yes
+
+- name: Créer un fichier témoin pour éviter les réinitialisations inutiles
+  ansible.builtin.file:
+    path: /etc/apt/trusted.gpg.d/rocm_cleanup_done
+    state: touch
+    mode: "0644"
+
+- name: Ajouter le repo ROCm {{ rocm_version }}
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/rocm.gpg] https://repo.radeon.com/rocm/apt/{{ rocm_version }} noble main"
+    state: present
+    filename: rocm
+
+- name: Installer ROCm
+  apt:
+    name: "{{ rocm_packages }}"
+    state: present
+    allow_downgrade: yes
+    update_cache: yes

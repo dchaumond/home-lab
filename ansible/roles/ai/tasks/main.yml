@@ -1,0 +1,63 @@
+---
+- name: Configurer le GPU Passthrough sur Proxmox (Ryzen)
+  block:
+    - name: Copier le script de GPU Passthrough
+      ansible.builtin.copy:
+        src: setup_proxmox.sh
+        dest: /tmp/setup_proxmox.sh
+        mode: "0755"
+
+    - name: Exécuter le script de GPU Passthrough
+      ansible.builtin.command: /tmp/setup_proxmox.sh {{ secrets.ai_node.ct_id }}
+  when: "'proxmox_ryzen' in group_names"
+  delegate_to: pve-ryzen
+
+- name: Configurer le nœud AI (ROCm + Ollama)
+  block:
+    - name: Installer les dépendances pour ROCm
+      ansible.builtin.apt:
+        name:
+          - gpg
+          - curl
+          - software-properties-common
+          - apt-transport-https
+          - ca-certificates
+        state: present
+        update_cache: yes
+
+    - name: Ajouter la clé GPG pour ROCm
+      ansible.builtin.apt_key:
+        url: https://repo.radeon.com/rocm/rocm.gpg.key
+        state: present
+
+    - name: Ajouter le dépôt ROCm
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64] https://repo.radeon.com/rocm/apt/{{ rocm_version }} noble main"
+        state: present
+        filename: rocm
+        update_cache: yes
+
+    - name: Installer uniquement rocminfo (sans dépendances conflictuelles)
+      ansible.builtin.apt:
+        name: rocminfo
+        state: present
+        update_cache: yes
+
+    - name: Installer zstd (nécessaire pour Ollama)
+      ansible.builtin.apt:
+        name: zstd
+        state: present
+
+    - name: Télécharger et installer Ollama
+      ansible.builtin.shell: |
+        curl -fsSL https://ollama.com/install.sh | sh
+      args:
+        creates: /usr/local/bin/ollama
+        executable: /bin/bash
+
+    - name: Activer et démarrer le service Ollama
+      ansible.builtin.systemd:
+        name: ollama
+        enabled: yes
+        state: started
+  when: "'lxc_ai' in group_names"

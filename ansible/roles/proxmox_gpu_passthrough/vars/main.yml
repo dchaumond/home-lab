@@ -1,0 +1,6 @@
+---
+# Variables dynamiques pour le GPU passthrough (Radeon 780M)
+gpu_vendor_id: "{{ local_secrets.ai_node.gpu_vendor_id | default('1002') }}"
+gpu_device_id: "{{ local_secrets.ai_node.gpu_device_id | default('1900') }}"
+grub_cmdline_iommu: "amd_iommu=on iommu=pt video=efifb:off"
+vfio_modules: ["vfio", "vfio_iommu_type1", "vfio_pci"]

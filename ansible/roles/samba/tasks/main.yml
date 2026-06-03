@@ -1,0 +1,53 @@
+# roles/samba/tasks/main.yml
+---
+- name: Installer Samba
+  ansible.builtin.apt:
+    name: samba
+    state: present
+    update_cache: true
+
+- name: Créer l'utilisateur Samba
+  ansible.builtin.user:
+    name: "{{ secrets.samba.user }}"
+    password: "{{ secrets.samba.password | password_hash('sha512') }}"
+    groups: "{{ secrets.samba.group }}"
+    append: true
+    shell: /usr/sbin/nologin
+    system: true
+
+- name: Créer le répertoire de partage
+  ansible.builtin.file:
+    path: "{{ secrets.samba.mount_path }}"
+    state: directory
+    owner: "{{ secrets.samba.user }}"
+    group: "{{ secrets.samba.group }}"
+    mode: '0775'
+
+- name: Configurer Samba (smb.conf)
+  ansible.builtin.template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Redémarrer Samba
+
+- name: Activer et démarrer Samba
+  ansible.builtin.service:
+    name: smbd
+    enabled: true
+    state: started
+
+- name: Vérifier si l'utilisateur Samba existe déjà
+  ansible.builtin.command: smbpasswd -e "{{ secrets.samba.user }}"
+  register: samba_user_exists
+  ignore_errors: yes
+  changed_when: false
+
+- name: Définir le mot de passe Samba (si nécessaire)
+  ansible.builtin.shell: |
+    printf '%s\n' "{{ secrets.samba.password }}" "{{ secrets.samba.password }}" | smbpasswd -s -a "{{ secrets.samba.user }}"
+  when: samba_user_exists.rc != 0
+  changed_when: samba_user_exists.rc != 0
+
+

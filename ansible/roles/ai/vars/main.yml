@@ -1,0 +1,5 @@
+---
+# Variables dynamiques pour l'environnement AI (ROCm + Ollama)
+hsa_override_version: "{{ local_secrets.ai_node.hsa_override_version | default('11.0.3') }}"
+rocm_version: "{{ local_secrets.ai_node.rocm_version | default('6.2') }}"
+rocm_packages: "{{ local_secrets.ai_node.rocm_packages | default(['rocminfo', 'rocm-hip-runtime', 'rocm-device-libs', 'miopen-hip', 'rocm-smi']) }}"

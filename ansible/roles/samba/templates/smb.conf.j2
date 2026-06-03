@@ -1,0 +1,30 @@
+# smb.conf.j2
+[global]
+   workgroup = WORKGROUP
+   server string = Samba Server %v
+   security = user
+   map to guest = bad user
+   dns proxy = no
+   server role = standalone server
+   passdb backend = tdbsam
+   obey pam restrictions = yes
+   unix password sync = yes
+   pam password change = yes
+   passwd program = /usr/bin/passwd %u
+   passwd chat = *Enter\snew\s*\spassword:* %n\n *Retype\snew\s*\spassword:* %n\n *password\supdated\ssuccessfully* .
+   syslog = 0
+   log file = /var/log/samba/log.%m
+   max log size = 1000
+   panic action = /usr/share/samba/panic-action %d
+
+[{{ secrets.samba.share_name }}]
+   comment = Partage Public
+   path = {{ secrets.samba.mount_path }}
+   browseable = yes
+   read only = no
+   guest ok = no
+   create mask = 0775
+   directory mask = 0775
+   valid users = {{ secrets.samba.user }}
+   force user = {{ secrets.samba.system_user }}
+   force group = {{ secrets.samba.group }}

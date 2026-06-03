@@ -1,0 +1,10 @@
+---
+- name: Vérifier la détection de la GPU avec rocminfo
+  command: rocminfo
+  register: rocminfo_result
+  changed_when: false
+
+- name: Afficher les informations GPU
+  debug:
+    var: rocminfo_result.stdout_lines
+  when: rocminfo_result.stdout is search('gfx1103')

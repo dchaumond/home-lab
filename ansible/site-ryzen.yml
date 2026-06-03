@@ -1,0 +1,11 @@
+---
+- name: Configurer le GPU Passthrough sur Proxmox (Ryzen)
+  hosts: proxmox_ryzen
+  roles:
+    - role: ai  # Exécute uniquement la tâche de GPU Passthrough
+
+- name: Configurer le nœud AI (ROCm)
+  hosts: lxc_ai
+  become: true
+  roles:
+    - role: ai  # Exécute uniquement les tâches ROCm

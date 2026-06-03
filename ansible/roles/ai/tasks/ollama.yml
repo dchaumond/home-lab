@@ -1,0 +1,23 @@
+---
+- name: Installer Ollama
+  shell: curl -fsSL https://ollama.com/install.sh | sh
+  args:
+    creates: /usr/local/bin/ollama
+
+- name: Configurer Ollama pour ROCm
+  blockinfile:
+    path: /etc/systemd/system/ollama.service.d/rocm.conf
+    create: yes
+    block: |
+      [Service]
+      Environment="HSA_OVERRIDE_GFX_VERSION={{ hsa_override_version }}"
+      Environment="HSA_ENABLE_SDMA=1"
+      Environment="OLLAMA_FLASH_ATTENTION=0"
+      Environment="OLLAMA_HOST=0.0.0.0"
+  notify: restart ollama
+
+- name: Ajouter l'utilisateur ollama aux groupes video/render
+  user:
+    name: ollama
+    groups: video,render
+    append: yes

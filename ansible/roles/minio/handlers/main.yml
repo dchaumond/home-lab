@@ -1,0 +1,6 @@
+# roles/minio/handlers/main.yml
+---
+- name: Redémarrer MinIO
+  ansible.builtin.service:
+    name: minio
+    state: restarted

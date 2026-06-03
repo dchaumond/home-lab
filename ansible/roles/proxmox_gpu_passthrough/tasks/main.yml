@@ -1,0 +1,13 @@
+---
+- name: Copier le script de configuration GPU sur le nœud Proxmox
+  ansible.builtin.copy:
+    src: setup_proxmox.sh
+    dest: /tmp/setup_proxmox.sh
+    mode: "0755"
+    owner: root
+    group: root
+
+- name: Configurer le GPU Passthrough pour le conteneur {{ secrets.ai_node.ct_id }}
+  ansible.builtin.command: /tmp/setup_proxmox.sh {{ secrets.ai_node.ct_id }}
+  register: gpu_config_result
+  changed_when: "'Configuration GPU appliquée' in gpu_config_result.stdout"
