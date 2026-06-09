@@ -1,6 +1,0 @@
-# roles/samba/handlers/main.yml
----
-- name: Redémarrer Samba
-  ansible.builtin.service:
-    name: smbd
-    state: restarted

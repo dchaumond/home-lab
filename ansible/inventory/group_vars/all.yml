@@ -1,3 +1,0 @@
-docker_admin_uid: 1000
-docker_admin_gid: 1000
-docker_admin_user: docker-admin

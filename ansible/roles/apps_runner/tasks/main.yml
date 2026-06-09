@@ -1,0 +1,66 @@
+---
+- name: Installer Docker et dépendances
+  ansible.builtin.apt:
+    name:
+      - docker.io
+      - docker-compose
+    state: present
+    update_cache: yes
+
+- name: Créer l'utilisateur docker-admin
+  ansible.builtin.user:
+    name: "{{ secrets.docker_admin.user }}"
+    uid: "{{ secrets.docker_admin.uid }}"
+    home: "{{ secrets.docker_admin.home }}"
+    groups: "docker,sudo"
+    append: yes
+    shell: /bin/bash
+    create_home: yes
+
+- name: Créer le répertoire .ssh pour docker-admin
+  ansible.builtin.file:
+    path: "{{ secrets.docker_admin.home }}/.ssh"
+    state: directory
+    mode: '0700'
+    owner: "{{ secrets.docker_admin.user }}"
+    group: "{{ secrets.docker_admin.user }}"
+
+- name: Ajouter la clé SSH pour docker-admin
+  ansible.builtin.copy:
+    dest: "{{ secrets.docker_admin.home }}/.ssh/authorized_keys"
+    content: "{{ secrets.ssh_key_homelab }}"
+    mode: '0600'
+    owner: "{{ secrets.docker_admin.user }}"
+    group: "{{ secrets.docker_admin.user }}"
+
+- name: Créer le répertoire de stockage Docker dans le home de docker-admin
+  ansible.builtin.file:
+    path: "{{ secrets.apps_runner_ryzen.docker_data_path }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ secrets.docker_admin.user }}"
+    group: "{{ secrets.docker_admin.user }}"
+  register: docker_data_dir
+  changed_when: docker_data_dir is changed
+
+- name: Configurer Docker pour utiliser le répertoire dans le home de docker-admin
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "data-root": "{{ secrets.apps_runner_ryzen.docker_data_path }}",
+        "storage-driver": "overlay2"
+      }
+    mode: '0644'
+  notify: Redémarrer Docker
+
+- name: Activer et démarrer Docker
+  ansible.builtin.systemd:
+    name: docker
+    enabled: yes
+    state: started
+
+- name: Vérifier Docker
+  ansible.builtin.command: docker run --rm hello-world
+  register: docker_test
+  changed_when: false

@@ -1,0 +1,131 @@
+---
+- name: Installer les dépendances de base
+  ansible.builtin.apt:
+    name:
+      - git
+      - curl
+      - wget
+      - ca-certificates
+      - gnupg
+      - sudo
+    state: present
+    update_cache: yes
+
+- name: Créer l'utilisateur {{ secrets.user.name }}
+  ansible.builtin.user:
+    name: "{{ secrets.user.name }}"
+    shell: /bin/bash
+    groups: sudo
+    append: yes
+    create_home: yes
+    password: "{{ secrets.user.password | password_hash('sha512') }}"
+
+- name: Installer Samba
+  ansible.builtin.apt:
+    name:
+      - samba
+      - samba-common
+      - smbclient
+    state: present
+    update_cache: yes
+
+- name: Définir le mot de passe Samba pour {{ secrets.user.name }}
+  ansible.builtin.shell: |
+    (echo "{{ secrets.user.password }}"; echo "{{ secrets.user.password }}") | /usr/bin/smbpasswd -a {{ secrets.user.name }}
+  register: smbpasswd_result
+  changed_when: "'Added user' in smbpasswd_result.stdout"
+  failed_when: smbpasswd_result.rc != 0 and "'Adding user' not in smbpasswd_result.stdout"
+  no_log: true
+
+- name: Configurer Samba
+  ansible.builtin.copy:
+    dest: /etc/samba/smb.conf
+    content: |
+      [global]
+      workgroup = WORKGROUP
+      server string = Samba Server
+      security = user
+      map to guest = Never
+      
+      [{{ secrets.samba.share_name }}]
+      path = {{ secrets.samba.mount_path }}
+      browsable = yes
+      writable = yes
+      valid users = {{ secrets.user.name }}
+    mode: '0644'
+
+- name: Créer le répertoire de stockage Samba
+  ansible.builtin.file:
+    path: "{{ secrets.samba.mount_path }}"
+    state: directory
+    mode: '0777'
+
+- name: Redémarrer Samba
+  ansible.builtin.service:
+    name: smbd
+    state: restarted
+    enabled: yes
+
+- name: Installer MinIO
+  ansible.builtin.apt:
+    name:
+      - wget
+    state: present
+
+- name: Télécharger MinIO
+  ansible.builtin.get_url:
+    url: "https://dl.min.io/server/minio/release/linux-amd64/minio"
+    dest: /usr/local/bin/minio
+    mode: '0755'
+
+- name: Créer le répertoire de stockage MinIO
+  ansible.builtin.file:
+    path: "{{ secrets.minio.storage_mount_minio_dest }}"
+    state: directory
+    mode: '0777'
+
+- name: Créer le fichier de configuration systemd pour MinIO
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/minio.service
+    content: |
+      [Unit]
+      Description=MinIO
+      Documentation=https://docs.min.io
+      Wants=network-online.target
+      After=network-online.target
+      AssertFileIsExecutable=/usr/local/bin/minio
+      
+      [Service]
+      WorkingDirectory=/usr/local/
+      
+      User={{ secrets.user.name }}
+      Group={{ secrets.user.name }}
+      
+      EnvironmentFile=-/etc/default/minio
+      ExecStartPre=/bin/bash -c "mkdir -p {{ secrets.minio.storage_mount_minio_dest }}"
+      ExecStart=/usr/local/bin/minio server {{ secrets.minio.storage_mount_minio_dest }} --console-address ":9001"
+      
+      Restart=always
+      LimitNOFILE=65536
+      TasksMax=infinity
+      TimeoutStopSec=infinity
+      SendSIGKILL=no
+      
+      [Install]
+      WantedBy=multi-user.target
+    mode: '0644'
+
+- name: Créer le fichier de configuration par défaut pour MinIO
+  ansible.builtin.copy:
+    dest: /etc/default/minio
+    content: |
+      MINIO_ROOT_USER={{ secrets.minio.root_user }}
+      MINIO_ROOT_PASSWORD={{ secrets.minio.root_password }}
+      MINIO_VOLUMES="{{ secrets.minio.storage_mount_minio_dest }}"
+    mode: '0644'
+
+- name: Activer et démarrer le service MinIO
+  ansible.builtin.systemd:
+    name: minio
+    state: started
+    enabled: yes

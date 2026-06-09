@@ -19,9 +19,10 @@ module "lxc_storage" {
   disk_size         = 10
 
   ip_configs = [{
-    ipv4 = { address = local.secrets.lxc_storage.ip
-             gw = local.secrets.gw_ip
-           }
+    ipv4 = {
+      address = local.secrets.lxc_storage.ip
+      gateway = local.secrets.gw_ip
+    }
   }]
   network_interfaces = [{
     name    = "eth0"

@@ -1,8 +1,0 @@
----
-- name: update grub
-  command: update-grub
-  become: yes
-
-- name: update initramfs
-  command: update-initramfs -u
-  become: yes

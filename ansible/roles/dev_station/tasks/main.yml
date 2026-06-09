@@ -1,0 +1,126 @@
+--- 
+- name: Installer les dépendances de base
+  ansible.builtin.apt:
+    name:
+      - git
+      - curl
+      - wget
+      - ca-certificates
+      - gnupg
+      - sudo
+      - jq
+    state: present
+    update_cache: yes
+
+- name: Créer le groupe docker
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Créer l'utilisateur {{ secrets.user.name }}
+  ansible.builtin.user:
+    name: "{{ secrets.user.name }}"
+    shell: /bin/bash
+    groups: sudo,docker
+    append: yes
+    create_home: yes
+
+- name: Définir le mot de passe pour {{ secrets.user.name }}
+  ansible.builtin.shell: "echo '{{ secrets.user.name }}:{{ secrets.user.password }}' | chpasswd"
+  no_log: true
+
+- name: Installer Docker avec fuse-overlayfs
+  ansible.builtin.apt:
+    name:
+      - docker.io
+      - fuse-overlayfs
+    state: present
+    update_cache: yes
+
+- name: Créer le groupe docker
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Ajouter l'utilisateur dch au groupe docker
+  ansible.builtin.user:
+    name: "{{ secrets.user.name }}"
+    groups: docker
+    append: yes
+
+- name: Configurer Docker pour LXC
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "storage-driver": "fuse-overlayfs"
+      }
+    mode: '0644'
+
+- name: Redémarrer Docker
+  ansible.builtin.service:
+    name: docker
+    state: restarted
+    enabled: yes
+
+- name: Vérifier l'installation de Docker
+  ansible.builtin.command: docker --version
+  register: docker_version
+  changed_when: false
+
+- name: Afficher la version de Docker
+  ansible.builtin.debug:
+    var: docker_version.stdout
+
+- name: Configurer Docker pour LXC
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "storage-driver": "fuse-overlayfs"
+      }
+    mode: '0644'
+
+- name: Redémarrer Docker
+  ansible.builtin.service:
+    name: docker
+    state: restarted
+    enabled: yes
+
+- name: Installer VSCode
+  ansible.builtin.shell: |
+    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+    install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+    echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
+    rm -f packages.microsoft.gpg
+    apt update && apt install -y code
+  args:
+    creates: /usr/bin/code
+
+- name: Installer Terraform
+  ansible.builtin.apt_key:
+    url: https://apt.releases.hashicorp.com/gpg
+    state: present
+
+- name: Ajouter le dépôt Terraform
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+    state: present
+
+- name: Installer Terraform
+  ansible.builtin.apt:
+    name: terraform
+    state: present
+
+- name: Installer kubectl
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/{{ lookup('url', 'https://dl.k8s.io/release/stable.txt') }}/bin/linux/amd64/kubectl"
+    dest: /usr/local/bin/kubectl
+    mode: '0755'
+
+- name: Installer Node.js
+  ansible.builtin.shell: |
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt install -y nodejs
+  args:
+    creates: /usr/bin/node

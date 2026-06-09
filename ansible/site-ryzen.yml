@@ -1,4 +1,10 @@
 ---
+- name: Configurer le conteneur lxc_storage
+  hosts: lxc_storage
+  become: true
+  roles:
+    - role: lxc_storage
+    
 - name: Configurer le GPU Passthrough sur Proxmox (Ryzen)
   hosts: proxmox_ryzen
   roles:
@@ -9,3 +15,15 @@
   become: true
   roles:
     - role: ai  # Exécute uniquement les tâches ROCm
+
+- name: Configurer le conteneur DevStation
+  hosts: lxc_devstation_ryzen
+  become: true
+  roles:
+    - role: dev_station
+
+- name: Configurer le conteneur Apps Runner
+  hosts: lxc_apps_runner_ryzen
+  become: true
+  roles:
+    - role: apps_runner
