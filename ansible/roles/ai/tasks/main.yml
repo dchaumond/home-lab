@@ -43,6 +43,14 @@
         state: present
         update_cache: yes
 
+    - name: Installer les dépendances pour la vérification réseau
+      ansible.builtin.apt:
+        name:
+          - lsof
+          - net-tools
+        state: present
+        update_cache: yes
+
     - name: Installer zstd (nécessaire pour Ollama)
       ansible.builtin.apt:
         name: zstd
@@ -55,9 +63,40 @@
         creates: /usr/local/bin/ollama
         executable: /bin/bash
 
+    - name: Ajouter l'utilisateur ollama aux groupes video et render
+      ansible.builtin.user:
+        name: ollama
+        groups: video,render
+        append: yes
+
     - name: Activer et démarrer le service Ollama
       ansible.builtin.systemd:
         name: ollama
         enabled: yes
         state: started
+
+    - name: Configurer Ollama pour écouter sur 0.0.0.0
+      block:
+        - name: Créer le répertoire de surcharge systemd pour Ollama
+          ansible.builtin.file:
+            path: /etc/systemd/system/ollama.service.d
+            state: directory
+            mode: "0755"
+
+        - name: Surcharger le service Ollama pour écouter sur 0.0.0.0
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/ollama.service.d/override.conf
+            content: |
+              [Service]
+              Environment="OLLAMA_HOST=0.0.0.0"
+            mode: "0644"
+          notify: restart ollama
+
+        - name: Vérifier que Ollama écoute sur 0.0.0.0:11434
+          ansible.builtin.shell: |
+            netstat -tulnp | grep -E ':11434.*ollama'
+          register: ollama_listen_check
+          changed_when: false
+          failed_when: ollama_listen_check.rc != 0
+      when: "'lxc_ai' in group_names"
   when: "'lxc_ai' in group_names"
