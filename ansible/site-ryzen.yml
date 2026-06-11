@@ -10,11 +10,11 @@
   roles:
     - role: ai  # Exécute uniquement la tâche de GPU Passthrough
 
-- name: Configurer le nœud AI (ROCm)
+- name: Configurer le nœud AI (GPU Passthrough + ROCm/Ollama)
   hosts: lxc_ai
   become: true
   roles:
-    - role: ai  # Exécute uniquement les tâches ROCm
+    - role: ai  # Exécute le passthrough (via delegate_to) + ROCm/Ollama
 
 - name: Configurer le conteneur DevStation
   hosts: lxc_devstation_ryzen
