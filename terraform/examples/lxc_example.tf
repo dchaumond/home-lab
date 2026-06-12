@@ -43,8 +43,8 @@ module "lxc_docker" {
 
   ip_configs = [{
     ipv4 = {
-      address = "${local.secrets.apps_runner_ip}/24"
-      gateway = "${local.secrets.gateway_ip}"
+      address = "10.0.0.100/24"
+      gateway = "10.0.0.254"
     }
   }]
 

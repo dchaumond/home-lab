@@ -325,7 +325,7 @@ Ce document décrit les règles de codage et bonnes pratiques à suivre pour les
         "api_token_secret": "secret"
       },
       "ansible": {
-        "ansible_host": "192.168.1.100",
+        "ansible_host": "10.0.0.1",
         "ansible_user": "root",
         "ansible_password": "password"
       }

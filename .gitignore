@@ -20,6 +20,7 @@
 # Secrets & Divers
 .env
 .env.json
+.terraform
 *.log
 **/.DS_Store
 
