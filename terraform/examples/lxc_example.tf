@@ -43,8 +43,8 @@ module "lxc_docker" {
 
   ip_configs = [{
     ipv4 = {
-      address = "192.168.1.200/24"
-      gateway = "192.168.1.1"
+      address = "${local.secrets.apps_runner_ip}/24"
+      gateway = "${local.secrets.gateway_ip}"
     }
   }]
 
@@ -138,9 +138,9 @@ terraform {
 }
 
 provider "proxmox" {
-  endpoint = "https://pve1.lan:8006"   # n'importe quel nœud du cluster
-  username = "terraform@pve"
-  password = var.proxmox_password
+  endpoint = local.secrets.proxmox_endpoint
+  username = local.secrets.proxmox_username
+  password = local.secrets.proxmox_password
   insecure = true
 }
 
@@ -206,17 +206,17 @@ module "lxc_pve2_docker" {
 
 provider "proxmox" {
   alias    = "pve_prod"
-  endpoint = "https://192.168.1.10:8006"
-  username = "terraform@pve"
-  password = var.proxmox_password_prod
+  endpoint = local.secrets.proxmox_prod_endpoint
+  username = local.secrets.proxmox_username
+  password = local.secrets.proxmox_password_prod
   insecure = true
 }
 
 provider "proxmox" {
   alias    = "pve_dev"
-  endpoint = "https://192.168.1.11:8006"
-  username = "terraform@pve"
-  password = var.proxmox_password_dev
+  endpoint = local.secrets.proxmox_dev_endpoint
+  username = local.secrets.proxmox_username
+  password = local.secrets.proxmox_password_dev
   insecure = true
 }
 
@@ -238,7 +238,7 @@ module "lxc_prod" {
   disk_size        = 20
 
   ip_configs = [{
-    ipv4 = { address = "10.0.1.50/24", gateway = "10.0.1.1" }
+    ipv4 = { address = "${local.secrets.apps_prod_ip}/24", gateway = "${local.secrets.gateway_ip}" }
   }]
 
   mount_points = [

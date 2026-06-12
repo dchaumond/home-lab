@@ -11,14 +11,14 @@ module "lxc_simple" {
   os_type             = "debian"
 
   ssh_public_keys = [var.ssh_key_homelab]
-  root_password   = var.root_password
+  root_password   = local.secrets.root_password
 
-  disk_datastore_id = "local-lvm"
+  disk_datastore_id = local.secrets.disk_datastore_id
   disk_size         = 10
 
   ip_configs = [{
-    ipv4 = { address = "192.168.1.30/24"
-             gw = var.gw_ip
+    ipv4 = { address = "${local.secrets.apps_runner_ip}/24"
+             gw = local.secrets.gateway_ip
            }
   }]
   network_interfaces = [{
