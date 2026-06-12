@@ -101,4 +101,3 @@
       changed_when: false
       failed_when: gpu_check.rc != 0
   when: "'lxc_ai' in group_names"
-  when: "'lxc_ai' in group_names"

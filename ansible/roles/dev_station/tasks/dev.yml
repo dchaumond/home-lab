@@ -63,13 +63,13 @@
   ansible.builtin.shell: |
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
   args:
-    creates: /home/dch/.cargo/bin/rustc  # Utilisateur 'dch' existant
+    creates: "{{ ansible_user_dir }}/.cargo/bin/rustc"
   become: yes
   become_user: dch
 
 - name: Ajouter les binaires Rust au PATH de l'utilisateur dch
   ansible.builtin.lineinfile:
-    path: /home/dch/.bashrc
+    path: "{{ ansible_user_dir }}/.bashrc"
     line: 'export PATH="$HOME/.cargo/bin:$PATH"'
     regexp: '^export PATH=.*\.cargo/bin.*'
     insertafter: EOF
