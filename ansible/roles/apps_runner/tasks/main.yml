@@ -1,4 +1,10 @@
 ---
+- name: Installer sudo
+  ansible.builtin.apt:
+    name: sudo
+    state: present
+    update_cache: yes
+
 - name: Installer Docker et dépendances
   ansible.builtin.apt:
     name:
@@ -7,7 +13,7 @@
     state: present
     update_cache: yes
 
-- name: Créer l'utilisateur docker-admin
+- name: Créer l'utilisateur docker-admin (forcé)
   ansible.builtin.user:
     name: "{{ secrets.docker_admin.user }}"
     uid: "{{ secrets.docker_admin.uid }}"
@@ -16,6 +22,11 @@
     append: yes
     shell: /bin/bash
     create_home: yes
+    password: "{{ secrets.docker_admin.password | password_hash('sha512') }}"
+    update_password: always
+    state: present
+  no_log: true
+  tags: user
 
 - name: Créer le répertoire .ssh pour docker-admin
   ansible.builtin.file:
@@ -32,6 +43,16 @@
     mode: '0600'
     owner: "{{ secrets.docker_admin.user }}"
     group: "{{ secrets.docker_admin.user }}"
+
+- name: Configurer sudo pour docker-admin (sans mot de passe)
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/docker-admin
+    content: |
+      {{ secrets.docker_admin.user }} ALL=(ALL) NOPASSWD:ALL
+    mode: "0440"
+    owner: root
+    group: root
+    validate: "visudo -cf %s"
 
 - name: Créer le répertoire de stockage Docker dans le home de docker-admin
   ansible.builtin.file:
