@@ -64,15 +64,18 @@
   register: docker_data_dir
   changed_when: docker_data_dir is changed
 
-- name: Configurer Docker pour utiliser le répertoire dans le home de docker-admin
+- name: Configurer Docker pour autoriser privileged pour le groupe docker
   ansible.builtin.copy:
     dest: /etc/docker/daemon.json
     content: |
       {
         "data-root": "{{ secrets.apps_runner_ryzen.docker_data_path }}",
-        "storage-driver": "overlay2"
+        "storage-driver": "overlay2",
+        "userns-remap": "default",
+        "live-restore": true,
+        "group": "docker"
       }
-    mode: '0644'
+    mode: "0644"
   notify: Redémarrer Docker
 
 - name: Activer et démarrer Docker
