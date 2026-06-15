@@ -181,6 +181,75 @@ Ce document décrit les règles de codage et bonnes pratiques à suivre pour les
     - ../../../.env.json
   ```
 
+#### **Gestion des Conteneurs LXC sur Proxmox 9.1.1**
+- **Redémarrage d'un conteneur** :
+  - Utiliser `pct stop <vmid>` puis `pct start <vmid>` (la commande `pct restart` n'est pas disponible dans Proxmox 9.1.1).
+  - Exemple :
+    ```yaml
+    - name: Arrêter le conteneur LXC
+      ansible.builtin.command: "pct stop {{ secrets.apps_runner_ryzen.ct_id }}"
+      delegate_to: "{{ secrets.pve_host_ryzen }}"
+      become: true
+    
+    - name: Démarrer le conteneur LXC
+      ansible.builtin.command: "pct start {{ secrets.apps_runner_ryzen.ct_id }}"
+      delegate_to: "{{ secrets.pve_host_ryzen }}"
+      become: true
+    ```
+
+- **Vérification de l'état d'un conteneur** :
+  - Utiliser `pct status <vmid>` pour vérifier l'état du conteneur.
+  - Exemple :
+    ```bash
+    ansible pve-ryzen -i ansible/inventory/hosts.yml -a "pct status {{ secrets.apps_runner_ryzen.ct_id }}" -u root --private-key ~/.ssh/id_ed25519_homelab
+    ```
+
+- **Vérification des commandes `pct` disponibles** :
+  - Utiliser `pct help` pour lister les commandes disponibles.
+  - Exemple :
+    ```bash
+    ansible pve-ryzen -i ansible/inventory/hosts.yml -a "pct help" -u root --private-key ~/.ssh/id_ed25519_homelab
+    ```
+
+#### **Mode de Travail**
+- **Ne jamais faire de modifications en mode build en cas d'échec sans ma validation** :
+  - Propose des modifications, mais attends ma validation avant de les appliquer.
+  - Exemple :
+    ```yaml
+    - name: Proposer une modification
+      ansible.builtin.command: "pct stop {{ secrets.apps_runner_ryzen.ct_id }}"
+      delegate_to: "{{ secrets.pve_host_ryzen }}"
+      become: true
+      when: false  # Proposer sans exécuter
+    ```
+
+#### **Gestion des Variables**
+- **Toutes les variables doivent être gérées dans `.env.json` à la racine du projet** :
+  - Aucune variable ne doit être définie en dur dans les fichiers de configuration (Terraform, Ansible, etc.).
+  - Exemple de `.env.json` :
+    ```json
+    {
+      "apps_runner_ryzen": {
+        "ct_id": 402,
+        "ip": "192.168.1.42/24"
+      },
+      "pve_host_ryzen": "pve-ryzen"
+    }
+    ```
+  - Utiliser `{{ secrets.<variable> }}` pour accéder aux variables dans les fichiers Ansible ou Terraform.
+
+#### **Mode de Travail**
+- **Ne jamais faire de modifications en mode build en cas d'échec sans ma validation** :
+  - Propose des modifications, mais attends ma validation avant de les appliquer.
+  - Exemple :
+    ```yaml
+    - name: Proposer une modification
+      ansible.builtin.command: "pct stop {{ secrets.apps_runner_ryzen.ct_id }}"
+      delegate_to: "{{ secrets.pve_host_ryzen }}"
+      become: true
+      when: false  # Proposer sans exécuter
+    ```
+
 
 #### **Modularité**
 - Découper les tâches complexes en sous-fichiers :
@@ -356,9 +425,89 @@ Ce document décrit les règles de codage et bonnes pratiques à suivre pour les
 
 - **Validation** :
   - Utiliser des outils de linting :
-    - Terraform : `terraform validate`, `tflint`.
-    - Ansible : `ansible-lint`.
+    - Terraform :
+      ```bash
+      terraform validate
+      tflint
+      ```
+    - Ansible :
+      ```bash
+      ansible-lint
+      ```
   - Tester les configurations dans des environnements isolés avant déploiement.
+
+---
+
+### **Commandes de Déploiement**
+#### **Terraform**
+- **Initialisation** (à exécuter une seule fois par environnement) :
+  ```bash
+  cd /home/dch/projects/home-lab/terraform/environments/<env>  # Ex: ryzen, nuc
+  terraform init
+  ```
+
+- **Validation** (avant tout déploiement) :
+  ```bash
+  terraform validate
+  tflint
+  ```
+
+- **Plan d'exécution** (pour prévisualiser les changements) :
+  ```bash
+  terraform plan -target=module.<nom_du_module>  # Ex: -target=module.apps_runner_ryzen
+  ```
+
+- **Déploiement** (appliquer les changements) :
+  ```bash
+  terraform apply -target=module.<nom_du_module> -auto-approve
+  ```
+
+- **Destruction** (supprimer un conteneur) :
+  ```bash
+  terraform destroy -target=module.<nom_du_module> -auto-approve
+  ```
+
+- **Bonnes pratiques** :
+  - Toujours cibler un module spécifique avec `-target` pour éviter les modifications involontaires.
+  - Utiliser `-auto-approve` uniquement en environnement de test.
+
+---
+
+#### **Ansible**
+- **Vérification de syntaxe** (avant tout déploiement) :
+  ```bash
+  ansible-playbook -i /home/dch/projects/home-lab/ansible/inventory/hosts.yml /home/dch/projects/home-lab/ansible/site-<env>.yml --syntax-check  # Ex: site-ryzen.yml
+  ```
+
+- **Déploiement ciblé** (pour un groupe spécifique) :
+  ```bash
+  ansible-playbook -i /home/dch/projects/home-lab/ansible/inventory/hosts.yml /home/dch/projects/home-lab/ansible/site-<env>.yml --limit <groupe>  # Ex: --limit lxc_apps_runner_ryzen
+  ```
+
+- **Déploiement avec tags** (pour exécuter des tâches spécifiques) :
+  ```bash
+  ansible-playbook -i /home/dch/projects/home-lab/ansible/inventory/hosts.yml /home/dch/projects/home-lab/ansible/site-<env>.yml --limit <groupe> --tags <tag>  # Ex: --tags docker
+  ```
+
+- **Vérifications post-déploiement** :
+  - **Accès SSH** :
+    ```bash
+    ansible <groupe> -i /home/dch/projects/home-lab/ansible/inventory/hosts.yml -m ping
+    ```
+  - **Docker** :
+    ```bash
+    ansible <groupe> -i /home/dch/projects/home-lab/ansible/inventory/hosts.yml -a "docker --version"
+    ansible <groupe> -i /home/dch/projects/home-lab/ansible/inventory/hosts.yml -a "docker info"
+    ```
+  - **Test Docker** :
+    ```bash
+    ansible <groupe> -i /home/dch/projects/home-lab/ansible/inventory/hosts.yml -a "docker run --rm busybox echo 'Docker fonctionne !'"
+    ```
+
+- **Bonnes pratiques** :
+  - Toujours utiliser `--limit` pour cibler un groupe spécifique.
+  - Vérifier la syntaxe avec `--syntax-check` avant tout déploiement.
+  - Utiliser `--tags` pour exécuter des tâches spécifiques (ex: `docker`, `lxc`).
 
 
 ### **4. Automatisation**

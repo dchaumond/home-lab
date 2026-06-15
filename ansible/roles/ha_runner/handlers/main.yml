@@ -1,0 +1,4 @@
+- name: Redémarrer Docker
+  ansible.builtin.systemd:
+    name: docker
+    state: restarted
