@@ -1,0 +1,39 @@
+
+- name: Installation de XFCE et XRDP (forcée)
+  ansible.builtin.apt:
+    name:
+      - xfce4
+      - xfce4-goodies
+      - xrdp
+      - xorg
+      - dbus-x11
+    state: latest
+    update_cache: yes
+    force_apt_get: yes
+  tags: rdp
+
+- name: Ajouter l'utilisateur au groupe ssl-cert
+  ansible.builtin.user:
+    name: "{{ secrets.user.name }}"
+    groups: ssl-cert
+    append: yes
+  tags: rdp
+
+- name: Configurer XRDP pour utiliser XFCE
+  ansible.builtin.copy:
+    content: "startxfce4"
+    dest: "/home/{{ secrets.user.name }}/.xsession"
+    mode: '0644'
+    owner: "{{ secrets.user.name }}"
+    group: "{{ secrets.user.name }}"
+    force: yes
+  tags: rdp
+  register: xsession_result
+
+- name: Redémarrer XRDP (forcé)
+  ansible.builtin.systemd:
+    name: xrdp
+    state: restarted
+    enabled: yes
+  tags: rdp
+

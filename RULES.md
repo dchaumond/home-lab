@@ -4,6 +4,38 @@ Ce document décrit les règles de codage et bonnes pratiques à suivre pour les
 
 ---
 
+## **📂 Structure du Projet**
+
+### **1.1. Arborescence**
+```
+/home/dch/projects/home-lab/
+├── ansible/
+│   ├── inventory/
+│   │   └── hosts.yml          # Fichier d'inventaire principal
+│   ├── roles/
+│   │   └── dev_station/
+│   │       ├── tasks/
+│   │       │   ├── main.yml      # Inclut les fichiers de tâches (DOIT contenir les tags)
+│   │       │   ├── dev.yml       # Tâches de développement
+│   │       │   └── rdp.yml       # Tâches RDP (XFCE + XRDP - DOIT être tagué)
+│   │       └── ...
+│   ├── site-ryzen.yml        # Playbook principal pour les machines Ryzen
+│   └── site-nuc.yml          # Playbook principal pour les machines NUC
+├── .env.json                  # Fichier de variables sensibles (NE JAMAIS COMMITTER)
+├── RULES.md                   # Ce fichier
+└── AGENTS.md                  # Documentation des agents et workflows
+```
+
+### **1.2. Règles Strictes**
+- **Variables sensibles** : Toujours utiliser `.env.json` pour les mots de passe, IPs, et utilisateurs.
+  Exemple : `{{ secrets.user.name }}` pour l'utilisateur cible.
+- **Tags Ansible** : 
+  - **Toutes les tâches** doivent être taguées (ex: `tags: rdp`).
+  - **L'inclusion dans `main.yml`** doit aussi être taguée pour que `--tags` fonctionne.
+- **Exécution** : Toujours tester en mode `--check` avant d'appliquer les changements.
+
+---
+
 ## **📌 Terraform**
 
 ### **1. Structure des fichiers**
@@ -28,8 +60,59 @@ Ce document décrit les règles de codage et bonnes pratiques à suivre pour les
   - Préfixer les variables par leur domaine (ex: `cpu_`, `memory_`, `disk_`).
   - Utiliser des noms en **snake_case** (ex: `vm_id`, `os_type`).
 
-
 ### **3. Bonnes pratiques**
+
+#### **Ansible**
+##### **1. Configuration**
+- **Inventaire** :
+  - Le groupe `lxc_devstation_ryzen` cible `dev-station-ryzen` avec `ansible_user: root`.
+  - Variables sensibles dans `.env.json` (ex: `secrets.user.name = "dch"`).
+
+- **Playbooks** :
+  - `site-ryzen.yml` inclut le rôle `dev_station` pour `lxc_devstation_ryzen`.
+  - **Problème courant** : Les tâches RDP ne s'exécutent **pas** avec `--tags rdp` si l'inclusion dans `main.yml` n'est pas taguée.
+
+##### **2. Tâches RDP (`rdp.yml`)**
+- **Paquets à installer** : `xfce4`, `xrdp`, `xorg`, `dbus-x11`.
+- **Fichier `.xsession`** : Doit être dans `/home/{{ secrets.user.name }}/.xsession` (pas `/root/`).
+- **Redémarrage** : Forcer avec `systemd` (ex: `state: restarted`).
+
+##### **3. Commandes Clés**
+- **Exécution complète** (sans tag) :
+  ```bash
+  ansible-playbook -i ansible/inventory/hosts.yml ansible/site-ryzen.yml --limit lxc_devstation_ryzen
+  ```
+
+- **Diagnostic** (mode lecture seule) :
+  ```bash
+  ansible-playbook -i ansible/inventory/hosts.yml ansible/site-ryzen.yml --limit lxc_devstation_ryzen --check --diff -vvv
+  ```
+
+- **Exécution avec tags** (après vérification) :
+  ```bash
+  ansible-playbook -i ansible/inventory/hosts.yml ansible/site-ryzen.yml --limit lxc_devstation_ryzen --tags rdp
+  ```
+
+##### **4. Vérifications Post-Exécution**
+- **Sur la machine cible** (`dev-station-ryzen`) :
+  ```bash
+  dpkg -l | grep -E "xrdp|xfce4"          # Paquets installés
+  systemctl status xrdp                 # Statut du service
+  cat /home/dch/.xsession               # Contenu du fichier .xsession
+  groups dch                            # Groupes de l'utilisateur
+  ```
+
+- **Depuis un client RDP** : Se connecter à l'IP de `dev-station-ryzen` (ex: `192.168.1.40`).
+
+##### **5. Dépannage**
+| Problème                          | Solution                                                                                     |
+|-----------------------------------|----------------------------------------------------------------------------------------------|
+| Tâches RDP ignorées               | Ajouter `tags: rdp` à l'inclusion dans `main.yml`.                                           |
+| Paquets non installés             | Utiliser `state: latest` + `update_cache: yes` dans `rdp.yml`.                               |
+| Fichier `.xsession` mal placé     | Vérifier le chemin `/home/{{ secrets.user.name }}/.xsession`.                               |
+| Service XRDP non démarré          | Forcer le redémarrage avec `state: restarted` dans `rdp.yml`.                               |
+
+
 #### **Sécurité**
 - Marquer les variables sensibles avec `sensitive = true` :
   ```hcl
