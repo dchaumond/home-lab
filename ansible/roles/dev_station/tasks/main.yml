@@ -76,3 +76,8 @@
 
 - name: Inclure les tâches d'installation RDP
   ansible.builtin.include_tasks: rdp.yml
+  tags: rdp
+
+- name: Inclure les tâches de configuration du bureau
+  ansible.builtin.include_tasks: desktop.yml
+  tags: desktop

@@ -1,0 +1,83 @@
+---
+- name: Installer Chromium et les outils XFCE
+  ansible.builtin.apt:
+    name:
+      - chromium
+      - menulibre
+      - xfce4-panel
+      - xfce4-terminal
+    state: present
+    update_cache: true
+  tags: desktop
+
+- name: Créer le répertoire des applications locales pour l'utilisateur
+  ansible.builtin.file:
+    path: "/home/{{ secrets.user.name }}/.local/share/applications/"
+    state: directory
+    owner: "{{ secrets.user.name }}"
+    group: "{{ secrets.user.name }}"
+    mode: '0755'
+  tags: desktop
+
+- name: Ajouter le launcher Chromium pour l'utilisateur
+  ansible.builtin.copy:
+    dest: "/home/{{ secrets.user.name }}/.local/share/applications/chromium.desktop"
+    content: |
+      [Desktop Entry]
+      Version=1.0
+      Name=Chromium Web Browser
+      Comment=Access the Internet
+      Exec=chromium %U
+      Icon=chromium
+      Terminal=false
+      Type=Application
+      Categories=Network;WebBrowser;
+    owner: "{{ secrets.user.name }}"
+    group: "{{ secrets.user.name }}"
+    mode: '0755'
+  tags: desktop
+
+- name: Ajouter le launcher VSCode pour l'utilisateur
+  ansible.builtin.copy:
+    dest: "/home/{{ secrets.user.name }}/.local/share/applications/vscode.desktop"
+    content: |
+      [Desktop Entry]
+      Version=1.0
+      Name=Visual Studio Code
+      Comment=Code Editing. Redefined.
+      Exec=/usr/bin/code --unity-launch %F
+      Icon=vscode
+      Terminal=false
+      Type=Application
+      Categories=Development;IDE;
+    owner: "{{ secrets.user.name }}"
+    group: "{{ secrets.user.name }}"
+    mode: '0755'
+  tags: desktop
+
+- name: Ajouter les launchers au bureau de l'utilisateur
+  ansible.builtin.copy:
+    src: "/home/{{ secrets.user.name }}/.local/share/applications/{{ item }}"
+    dest: "/home/{{ secrets.user.name }}/Desktop/{{ item }}"
+    owner: "{{ secrets.user.name }}"
+    group: "{{ secrets.user.name }}"
+    mode: '0755'
+    remote_src: yes
+  loop:
+    - chromium.desktop
+    - vscode.desktop
+  tags: desktop
+
+- name: Vérifier que Chromium est installé
+  ansible.builtin.command: which chromium
+  register: chromium_installed
+  changed_when: false
+  tags: desktop
+
+- name: Vérifier que VSCode est installé
+  ansible.builtin.command: which code
+  register: vscode_installed
+  changed_when: false
+  tags: desktop
+
+
