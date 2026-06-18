@@ -172,4 +172,11 @@ resource "proxmox_virtual_environment_container" "this" {
       shared        = lookup(mount_point.value, "shared", null)
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      description,
+    ]
+  }
+  
 }
