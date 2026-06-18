@@ -33,3 +33,9 @@
   become: true
   roles:
     - role: ha_runner
+
+- name: Configurer le conteneur Apps Runner
+  hosts: lxc_apps2_runner_ryzen
+  become: true
+  roles:
+    - role: apps_runner
