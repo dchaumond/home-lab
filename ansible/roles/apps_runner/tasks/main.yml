@@ -5,13 +5,8 @@
     state: present
     update_cache: yes
 
-- name: Installer Docker et dépendances
-  ansible.builtin.apt:
-    name:
-      - docker.io
-      - docker-compose
-    state: present
-    update_cache: yes
+- name: Inclure la routine d'installation de Docker CE
+  ansible.builtin.include_tasks: docker.yml
 
 - name: Créer l'utilisateur docker-admin (forcé)
   ansible.builtin.user:
@@ -71,7 +66,6 @@
     owner: "{{ secrets.docker_admin.user }}"
     group: "{{ secrets.docker_admin.user }}"
     mode: "0755"
-    recurse: yes
 
 - name: Sauvegarder la configuration Docker existante
   ansible.builtin.command: mv /etc/docker/daemon.json /etc/docker/daemon.json.bak

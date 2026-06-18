@@ -1,0 +1,55 @@
+---
+- name: Installer les dépendances initiales pour APT
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+    state: present
+    update_cache: yes
+    force_apt_get: yes
+
+- name: Créer le répertoire pour les clés GPG d'APT
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Télécharger la clé GPG officielle de Docker (Debian)
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/debian/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+    force: false # Évite de re-télécharger si la clé est déjà présente
+
+- name: Configurer le dépôt Docker CE officiel (Bookworm)
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable"
+    state: present
+    filename: docker-ce
+    update_cache: yes # Force le refresh uniquement à l'ajout/modification du repo
+
+- name: Installer les paquets Docker CE officiels
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    force_apt_get: yes
+
+- name: S'assurer que le service Docker est démarré et activé au boot
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Récupérer la version pour validation
+  ansible.builtin.command: docker --version
+  register: docker_version
+  changed_when: false
+
+- name: Afficher la version installée
+  ansible.builtin.debug:
+    var: docker_version.stdout

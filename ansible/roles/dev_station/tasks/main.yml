@@ -29,37 +29,8 @@
   ansible.builtin.shell: "echo '{{ secrets.user.name }}:{{ secrets.user.password }}' | chpasswd"
   no_log: true
 
-- name: Installer Docker avec fuse-overlayfs
-  ansible.builtin.apt:
-    name:
-      - docker.io
-      - fuse-overlayfs
-    state: present
-    update_cache: yes
-
-- name: Configurer Docker pour LXC
-  ansible.builtin.copy:
-    dest: /etc/docker/daemon.json
-    content: |
-      {
-        "storage-driver": "fuse-overlayfs"
-      }
-    mode: '0644'
-
-- name: Redémarrer Docker
-  ansible.builtin.service:
-    name: docker
-    state: restarted
-    enabled: yes
-
-- name: Vérifier l'installation de Docker
-  ansible.builtin.command: docker --version
-  register: docker_version
-  changed_when: false
-
-- name: Afficher la version de Docker
-  ansible.builtin.debug:
-    var: docker_version.stdout
+- name: Inclure les tâches d'installation de Docker CE officielle
+  ansible.builtin.include_tasks: docker.yml
 
 - name: Installer VSCode
   ansible.builtin.shell: |
