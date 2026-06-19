@@ -29,6 +29,16 @@
   ansible.builtin.shell: "echo '{{ secrets.user.name }}:{{ secrets.user.password }}' | chpasswd"
   no_log: true
 
+- name: Configurer sudo sans mot de passe pour dch
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/{{ secrets.user.name }}"
+    content: |
+      {{ secrets.user.name }} ALL=(ALL) NOPASSWD:ALL
+    mode: "0440"
+    owner: root
+    group: root
+    validate: "visudo -cf %s"
+    
 - name: Inclure les tâches d'installation de Docker CE officielle
   ansible.builtin.include_tasks: docker.yml
 
