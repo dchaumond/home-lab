@@ -1,7 +1,18 @@
 ---
-- name: Installer sudo
+- name: Installer les dépendances de base
   ansible.builtin.apt:
-    name: sudo
+    name:
+      - git
+      - curl
+      - wget
+      - ca-certificates
+      - gnupg
+      - sudo
+      - jq
+      - net-tools
+      - lsof
+      - strace
+      - tcpdump
     state: present
     update_cache: yes
 
@@ -53,27 +64,6 @@
     mode: '0440'
     owner: root
     group: root
-
-- name: Créer le répertoire de stockage Docker dans le home de docker-admin
-  ansible.builtin.file:
-    path: "{{ secrets.ha_runner_ryzen.docker_data_path }}"
-    state: directory
-    mode: '0755'
-    owner: "{{ secrets.docker_admin.user }}"
-    group: "{{ secrets.docker_admin.user }}"
-
-- name: Configurer Docker pour autoriser privileged pour le groupe docker
-  ansible.builtin.copy:
-    dest: /etc/docker/daemon.json
-    content: |
-      {
-        "data-root": "{{ secrets.ha_runner_ryzen.docker_data_path }}",
-        "storage-driver": "overlay2",
-        "live-restore": true,
-        "group": "docker"
-      }
-    mode: '0644'
-  notify: Redémarrer Docker
 
 - name: Activer et démarrer Docker
   ansible.builtin.systemd:

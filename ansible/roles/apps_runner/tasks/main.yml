@@ -1,7 +1,18 @@
 ---
-- name: Installer sudo
+- name: Installer les dépendances de base
   ansible.builtin.apt:
-    name: sudo
+    name:
+      - git
+      - curl
+      - wget
+      - ca-certificates
+      - gnupg
+      - sudo
+      - jq
+      - net-tools
+      - lsof
+      - strace
+      - tcpdump
     state: present
     update_cache: yes
 
@@ -48,43 +59,6 @@
     owner: root
     group: root
     validate: "visudo -cf %s"
-
-- name: Créer le répertoire de stockage Docker dans le home de docker-admin
-  ansible.builtin.file:
-    path: "{{ secrets.apps_runner_ryzen.docker_data_path }}"
-    state: directory
-    mode: '0755'
-    owner: "{{ secrets.docker_admin.user }}"
-    group: "{{ secrets.docker_admin.user }}"
-  register: docker_data_dir
-  changed_when: docker_data_dir is changed
-
-- name: Vérifier et corriger les permissions du répertoire Docker
-  ansible.builtin.file:
-    path: "{{ secrets.apps_runner_ryzen.docker_data_path }}"
-    state: directory
-    owner: "{{ secrets.docker_admin.user }}"
-    group: "{{ secrets.docker_admin.user }}"
-    mode: "0755"
-
-- name: Sauvegarder la configuration Docker existante
-  ansible.builtin.command: mv /etc/docker/daemon.json /etc/docker/daemon.json.bak
-  args:
-    removes: /etc/docker/daemon.json
-  ignore_errors: yes
-
-- name: Configurer Docker avec des paramètres minimaux
-  ansible.builtin.copy:
-    dest: /etc/docker/daemon.json
-    content: |
-      {
-        "data-root": "{{ secrets.apps_runner_ryzen.docker_data_path }}",
-        "storage-driver": "overlay2",
-        "live-restore": true,
-        "group": "docker"
-      }
-    mode: "0644"
-  notify: Redémarrer Docker
 
 - name: Activer et démarrer Docker
   ansible.builtin.systemd:

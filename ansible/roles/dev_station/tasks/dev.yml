@@ -17,8 +17,6 @@
       - glances
       - sysstat
       - ansible
-      - docker.io
-      - docker-compose
     state: present
     update_cache: yes
 
