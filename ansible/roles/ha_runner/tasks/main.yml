@@ -14,7 +14,7 @@
       - strace
       - tcpdump
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Inclure le socle Docker (installation + user docker-admin)
   ansible.builtin.include_role:
@@ -31,7 +31,8 @@
       lxc.mount.auto: proc:rw sys:rw
     marker: "# {mark} ANSIBLE MANAGED BLOCK - LXC PRIVILEGED MODE"
     insertafter: EOF
-    create: yes
+    create: true
+    mode: "0644"
   delegate_to: "{{ secrets.pve_host_ryzen }}"
   become: true
 

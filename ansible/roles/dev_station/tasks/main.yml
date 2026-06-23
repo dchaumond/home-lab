@@ -10,7 +10,7 @@
       - sudo
       - jq
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Créer le groupe docker
   ansible.builtin.group:
@@ -22,8 +22,8 @@
     name: "{{ secrets.user.name }}"
     shell: /bin/bash
     groups: sudo,docker
-    append: yes
-    create_home: yes
+    append: true
+    create_home: true
     password: "{{ secrets.user.password | password_hash('sha512') }}"
     update_password: always
   no_log: true
@@ -37,7 +37,7 @@
     owner: root
     group: root
     validate: "visudo -cf %s"
-    
+
 - name: Inclure le socle Docker (installation + user docker-admin)
   ansible.builtin.include_role:
     name: docker_base
@@ -47,7 +47,9 @@
     set -o pipefail
     wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
     install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
-    echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
+    echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] \
+      https://packages.microsoft.com/repos/code stable main" > \
+      /etc/apt/sources.list.d/vscode.list
     rm -f packages.microsoft.gpg
     apt update && apt install -y code
   args:

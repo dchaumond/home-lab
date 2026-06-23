@@ -62,7 +62,7 @@
     owner: "{{ secrets.user.name }}"
     group: "{{ secrets.user.name }}"
     mode: '0755'
-    remote_src: yes
+    remote_src: true
   loop:
     - chromium.desktop
     - vscode.desktop
@@ -79,5 +79,3 @@
   register: vscode_installed
   changed_when: false
   tags: desktop
-
-

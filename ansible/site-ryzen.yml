@@ -4,7 +4,7 @@
   become: true
   roles:
     - role: lxc_storage
-    
+
 - name: Configurer le GPU Passthrough sur Proxmox (Ryzen)
   hosts: proxmox_ryzen
   roles:

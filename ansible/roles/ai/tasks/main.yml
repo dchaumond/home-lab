@@ -1,5 +1,6 @@
 ---
 - name: Configurer le GPU Passthrough sur Proxmox (Ryzen)
+  when: "'lxc_ai' in group_names"
   block:
     - name: Copier le script de GPU Passthrough
       ansible.builtin.copy:
@@ -12,9 +13,9 @@
       ansible.builtin.command: /tmp/setup_proxmox.sh {{ secrets.ai_node.ct_id }}
       delegate_to: pve-ryzen
       changed_when: true
-  when: "'lxc_ai' in group_names"
 
 - name: Configurer le nœud AI (ROCm + Ollama)
+  when: "'lxc_ai' in group_names"
   block:
     - name: Installer les dépendances pour ROCm
       ansible.builtin.apt:
@@ -27,25 +28,28 @@
           - lsof
           - net-tools
         state: present
-        update_cache: yes
+        update_cache: true
 
-    - name: Ajouter la clé GPG pour ROCm
-      ansible.builtin.apt_key:
-        url: https://repo.radeon.com/rocm/rocm.gpg.key
-        state: present
+    - name: Télécharger la clé GPG ROCm
+      ansible.builtin.shell: |
+        curl -fsSL https://repo.radeon.com/rocm/rocm.gpg.key -o /etc/apt/keyrings/rocm.asc
+        chmod 644 /etc/apt/keyrings/rocm.asc
+      args:
+        creates: /etc/apt/keyrings/rocm.asc
+        executable: /bin/bash
 
     - name: Ajouter le dépôt ROCm
       ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64] https://repo.radeon.com/rocm/apt/{{ rocm_version }} noble main"
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.asc] https://repo.radeon.com/rocm/apt/{{ rocm_version }} noble main"
         state: present
         filename: rocm
-        update_cache: yes
+        update_cache: true
 
     - name: Installer uniquement rocminfo (sans dépendances conflictuelles)
       ansible.builtin.apt:
         name: rocminfo
         state: present
-        update_cache: yes
+        update_cache: true
 
     - name: Installer zstd (nécessaire pour Ollama)
       ansible.builtin.apt:
@@ -64,15 +68,16 @@
       ansible.builtin.user:
         name: ollama
         groups: video,render
-        append: yes
+        append: true
 
     - name: Activer et démarrer le service Ollama
       ansible.builtin.systemd:
         name: ollama
-        enabled: yes
+        enabled: true
         state: started
 
     - name: Configurer Ollama pour écouter sur 0.0.0.0
+      when: "'lxc_ai' in group_names"
       block:
         - name: Créer le répertoire de surcharge systemd pour Ollama
           ansible.builtin.file:
@@ -95,11 +100,10 @@
           register: ollama_listen_check
           changed_when: false
           failed_when: ollama_listen_check.rc != 0
-      when: "'lxc_ai' in group_names"
+
 
     - name: Vérifier que le GPU est accessible
       ansible.builtin.command: rocminfo | grep gfx
       register: gpu_check
       changed_when: false
       failed_when: gpu_check.rc != 0
-  when: "'lxc_ai' in group_names"

@@ -14,7 +14,7 @@
       - strace
       - tcpdump
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Inclure le socle Docker (installation + user docker-admin)
   ansible.builtin.include_role:
@@ -24,4 +24,4 @@
   ansible.builtin.command: docker run --rm --userns=host busybox echo "Docker fonctionne !"
   register: docker_test
   changed_when: false
-  ignore_errors: yes
+  ignore_errors: true

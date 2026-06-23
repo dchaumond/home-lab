@@ -18,7 +18,7 @@
       - sysstat
       - ansible
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Ajouter le dépôt NodeSource pour Node.js 20.x
   ansible.builtin.shell: |
@@ -50,7 +50,7 @@
     repo: "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
     state: present
     filename: hashicorp
-    update_cache: yes
+    update_cache: true
 
 - name: Installer Terraform et ansible-lint
   ansible.builtin.apt:
@@ -66,7 +66,7 @@
   args:
     creates: "{{ ansible_user_dir }}/.cargo/bin/rustc"
     executable: /bin/bash
-  become: yes
+  become: true
   become_user: "{{ secrets.user.name }}"
 
 - name: Ajouter les binaires Rust au PATH de l'utilisateur dch

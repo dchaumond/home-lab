@@ -9,15 +9,15 @@
       - gnupg
       - sudo
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Créer l'utilisateur {{ secrets.user.name }}
   ansible.builtin.user:
     name: "{{ secrets.user.name }}"
     shell: /bin/bash
     groups: sudo
-    append: yes
-    create_home: yes
+    append: true
+    create_home: true
     password: "{{ secrets.user.password | password_hash('sha512') }}"
 
 - name: Installer Samba
@@ -27,7 +27,7 @@
       - samba-common
       - smbclient
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Définir le mot de passe Samba pour {{ secrets.user.name }}
   ansible.builtin.shell: |
@@ -47,7 +47,7 @@
       server string = Samba Server
       security = user
       map to guest = Never
-      
+
       [{{ secrets.samba.share_name }}]
       path = {{ secrets.samba.mount_path }}
       browsable = yes
@@ -65,7 +65,7 @@
   ansible.builtin.service:
     name: smbd
     state: restarted
-    enabled: yes
+    enabled: true
 
 - name: Installer MinIO
   ansible.builtin.apt:
@@ -95,23 +95,23 @@
       Wants=network-online.target
       After=network-online.target
       AssertFileIsExecutable=/usr/local/bin/minio
-      
+
       [Service]
       WorkingDirectory=/usr/local/
-      
+
       User={{ secrets.user.name }}
       Group={{ secrets.user.name }}
-      
+
       EnvironmentFile=-/etc/default/minio
       ExecStartPre=/bin/bash -c "mkdir -p {{ secrets.minio.storage_mount_minio_dest }}"
       ExecStart=/usr/local/bin/minio server {{ secrets.minio.storage_mount_minio_dest }} --console-address ":9001"
-      
+
       Restart=always
       LimitNOFILE=65536
       TasksMax=infinity
       TimeoutStopSec=infinity
       SendSIGKILL=no
-      
+
       [Install]
       WantedBy=multi-user.target
     mode: '0644'
@@ -129,4 +129,4 @@
   ansible.builtin.systemd:
     name: minio
     state: started
-    enabled: yes
+    enabled: true
