@@ -22,9 +22,11 @@
 
 - name: Ajouter le dépôt NodeSource pour Node.js 20.x
   ansible.builtin.shell: |
+    set -o pipefail
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
   args:
     creates: /etc/apt/sources.list.d/nodesource.list
+    executable: /bin/bash
 
 - name: Installer Node.js (inclut npm)
   ansible.builtin.apt:
@@ -59,9 +61,11 @@
 
 - name: Installer Rust (via rustup)
   ansible.builtin.shell: |
+    set -o pipefail
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
   args:
     creates: "{{ ansible_user_dir }}/.cargo/bin/rustc"
+    executable: /bin/bash
   become: yes
   become_user: "{{ secrets.user.name }}"
 

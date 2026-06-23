@@ -44,6 +44,7 @@
 
 - name: Installer VSCode
   ansible.builtin.shell: |
+    set -o pipefail
     wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
     install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
     echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
@@ -51,6 +52,7 @@
     apt update && apt install -y code
   args:
     creates: /usr/bin/code
+    executable: /bin/bash
 
 - name: Inclure les tâches d'installation des outils de développement
   ansible.builtin.include_tasks: dev.yml

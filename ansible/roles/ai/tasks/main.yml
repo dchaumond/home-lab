@@ -11,6 +11,7 @@
     - name: Exécuter le script de GPU Passthrough
       ansible.builtin.command: /tmp/setup_proxmox.sh {{ secrets.ai_node.ct_id }}
       delegate_to: pve-ryzen
+      changed_when: true
   when: "'lxc_ai' in group_names"
 
 - name: Configurer le nœud AI (ROCm + Ollama)
@@ -53,6 +54,7 @@
 
     - name: Télécharger et installer Ollama
       ansible.builtin.shell: |
+        set -o pipefail
         curl -fsSL https://ollama.com/install.sh | sh
       args:
         creates: /usr/local/bin/ollama

@@ -7,7 +7,7 @@
       - xrdp
       - xorg
       - dbus-x11
-    state: latest
+    state: present
     update_cache: yes
     force_apt_get: yes
   tags: rdp

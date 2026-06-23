@@ -39,8 +39,10 @@
   ansible.builtin.command: "pct stop {{ secrets.ha_runner_ryzen.ct_id }}"
   delegate_to: "{{ secrets.pve_host_ryzen }}"
   become: true
+  changed_when: true
 
 - name: Démarrer le conteneur ha-runner-ryzen
   ansible.builtin.command: "pct start {{ secrets.ha_runner_ryzen.ct_id }}"
   delegate_to: "{{ secrets.pve_host_ryzen }}"
   become: true
+  changed_when: true
