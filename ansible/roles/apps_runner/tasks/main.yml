@@ -16,88 +16,15 @@
     state: present
     update_cache: yes
 
-- name: Inclure la routine d'installation de Docker CE
-  ansible.builtin.include_tasks: docker.yml
-
-- name: Créer l'utilisateur docker-admin (forcé)
-  ansible.builtin.user:
-    name: "{{ secrets.docker_admin.user }}"
-    uid: "{{ secrets.docker_admin.uid }}"
-    home: "{{ secrets.docker_admin.home }}"
-    groups: "docker,sudo"
-    append: yes
-    shell: /bin/bash
-    create_home: yes
-    password: "{{ secrets.docker_admin.password | password_hash('sha512') }}"
-    update_password: always
-    state: present
-  no_log: true
-  tags: user
-
-- name: Créer le répertoire .ssh pour docker-admin
-  ansible.builtin.file:
-    path: "{{ secrets.docker_admin.home }}/.ssh"
-    state: directory
-    mode: '0700'
-    owner: "{{ secrets.docker_admin.user }}"
-    group: "{{ secrets.docker_admin.user }}"
-
-- name: Ajouter la clé SSH pour docker-admin
-  ansible.builtin.copy:
-    dest: "{{ secrets.docker_admin.home }}/.ssh/authorized_keys"
-    content: "{{ secrets.ssh_key_homelab }}"
-    mode: '0600'
-    owner: "{{ secrets.docker_admin.user }}"
-    group: "{{ secrets.docker_admin.user }}"
-
-- name: Configurer sudo pour docker-admin (sans mot de passe)
-  ansible.builtin.copy:
-    dest: /etc/sudoers.d/docker-admin
-    content: |
-      {{ secrets.docker_admin.user }} ALL=(ALL) NOPASSWD:ALL
-    mode: "0440"
-    owner: root
-    group: root
-    validate: "visudo -cf %s"
-
-- name: Activer et démarrer Docker
-  ansible.builtin.systemd:
-    name: docker
-    enabled: yes
-    state: started
+- name: Inclure le socle Docker (installation + user docker-admin)
+  ansible.builtin.include_role:
+    name: docker_base
 
 - name: Vérifier Docker avec BusyBox (userns=host)
   ansible.builtin.command: docker run --rm --userns=host busybox echo "Docker fonctionne !"
   register: docker_test
   changed_when: false
   ignore_errors: yes
-
-- name: Configurer les paramètres LXC pour apps-runner-ryzen (mode privileged)
-  ansible.builtin.blockinfile:
-    path: "/etc/pve/lxc/{{ secrets.apps_runner_ryzen.ct_id }}.conf"
-    block: |
-      lxc.apparmor.profile: unconfined
-      lxc.seccomp.profile:
-      lxc.cgroup2.devices.allow: a
-      lxc.cap.drop:
-    marker: "# {mark} ANSIBLE MANAGED BLOCK - LXC PRIVILEGED MODE"
-    insertafter: EOF
-    create: yes
-  delegate_to: "{{ secrets.pve_host_ryzen }}"
-  become: true
-  when: "'lxc_apps_runner_ryzen' in group_names"
-
-- name: Arrêter le conteneur apps-runner-ryzen
-  ansible.builtin.command: "pct stop {{ secrets.apps_runner_ryzen.ct_id }}"
-  delegate_to: "{{ secrets.pve_host_ryzen }}"
-  become: true
-  when: "'lxc_apps_runner_ryzen' in group_names"
-
-- name: Démarrer le conteneur apps-runner-ryzen
-  ansible.builtin.command: "pct start {{ secrets.apps_runner_ryzen.ct_id }}"
-  delegate_to: "{{ secrets.pve_host_ryzen }}"
-  become: true
-  when: "'lxc_apps_runner_ryzen' in group_names"
 
 - name: Réinstaller Docker si nécessaire
   ansible.builtin.apt:

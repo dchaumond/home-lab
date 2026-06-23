@@ -13,7 +13,7 @@ module "dev_station_ryzen" {
   root_password   = local.secrets.root_password
 
   disk_datastore_id = "local-lvm"
-  disk_size         = 50
+  disk_size         = local.secrets.dev_station_ryzen.disk_size
 
   ip_configs = [{
     ipv4 = {
@@ -33,7 +33,7 @@ module "dev_station_ryzen" {
     nesting = true
   }
 
-  cpu_cores       = 4
-  memory_dedicated = 8192
-  memory_swap      = 1024
+  cpu_cores       = local.secrets.dev_station_ryzen.cpu_cores
+  memory_dedicated = local.secrets.dev_station_ryzen.memory
+  memory_swap      = local.secrets.dev_station_ryzen.memory_swap
 }

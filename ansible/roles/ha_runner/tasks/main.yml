@@ -16,66 +16,9 @@
     state: present
     update_cache: yes
 
-- name: Inclure la routine d'installation de Docker CE
-  ansible.builtin.include_tasks: docker.yml
-
-- name: Créer l'utilisateur docker-admin
-  ansible.builtin.user:
-    name: "{{ secrets.docker_admin.user }}"
-    uid: "{{ secrets.docker_admin.uid }}"
-    home: "{{ secrets.docker_admin.home }}"
-    groups: "docker,sudo"
-    append: yes
-    shell: /bin/bash
-    create_home: yes
-    password: "{{ secrets.docker_admin.password | password_hash('sha512') }}"
-    update_password: always
-  no_log: true
-
-- name: Créer le répertoire .ssh pour docker-admin
-  ansible.builtin.file:
-    path: "{{ secrets.docker_admin.home }}/.ssh"
-    state: directory
-    mode: '0700'
-    owner: "{{ secrets.docker_admin.user }}"
-    group: "{{ secrets.docker_admin.user }}"
-
-- name: Ajouter la clé SSH pour docker-admin
-  ansible.builtin.copy:
-    dest: "{{ secrets.docker_admin.home }}/.ssh/authorized_keys"
-    content: "{{ secrets.ssh_key_homelab }}"
-    mode: '0600'
-    owner: "{{ secrets.docker_admin.user }}"
-    group: "{{ secrets.docker_admin.user }}"
-
-- name: Créer le répertoire /etc/sudoers.d
-  ansible.builtin.file:
-    path: /etc/sudoers.d
-    state: directory
-    mode: '0750'
-    owner: root
-    group: root
-
-- name: Configurer sudo pour docker-admin (sans mot de passe)
-  ansible.builtin.copy:
-    dest: /etc/sudoers.d/docker-admin
-    content: |
-      {{ secrets.docker_admin.user }} ALL=(ALL) NOPASSWD:ALL
-    mode: '0440'
-    owner: root
-    group: root
-
-- name: Activer et démarrer Docker
-  ansible.builtin.systemd:
-    name: docker
-    enabled: yes
-    state: started
-
-- name: Vérifier Docker
-  ansible.builtin.command: docker info
-  register: docker_test
-  changed_when: false
-  ignore_errors: yes
+- name: Inclure le socle Docker (installation + user docker-admin)
+  ansible.builtin.include_role:
+    name: docker_base
 
 - name: Configurer les paramètres LXC pour ha-runner-ryzen (mode privileged)
   ansible.builtin.blockinfile:

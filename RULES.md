@@ -29,9 +29,9 @@ Ce document décrit les règles de codage et bonnes pratiques à suivre pour les
 ### **1.2. Règles Strictes**
 - **Variables sensibles** : Toujours utiliser `.env.json` pour les mots de passe, IPs, et utilisateurs.
   Exemple : `{{ secrets.user.name }}` pour l'utilisateur cible.
-- **Tags Ansible** : 
-  - **Toutes les tâches** doivent être taguées (ex: `tags: rdp`).
-  - **L'inclusion dans `main.yml`** doit aussi être taguée pour que `--tags` fonctionne.
+- **Tags Ansible** :
+  - **Ne taguez que les blocs qui ont un sens en isolation** (ex: `rdp`, `desktop`, `user`).
+  - Un bloc non tagué s'exécute toujours (`--tags` ne filtre que les tâches taguées).
 - **Exécution** : Toujours tester en mode `--check` avant d'appliquer les changements.
 
 ---

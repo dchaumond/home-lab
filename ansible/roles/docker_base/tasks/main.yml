@@ -1,0 +1,102 @@
+---
+- name: Installer les dépendances initiales pour APT
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+    state: present
+    update_cache: yes
+    force_apt_get: yes
+
+- name: Créer le répertoire pour les clés GPG d'APT
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Télécharger la clé GPG officielle de Docker (Debian)
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/debian/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+    force: false
+
+- name: Configurer le dépôt Docker CE officiel (Bookworm)
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable"
+    state: present
+    filename: docker-ce
+    update_cache: yes
+
+- name: Installer les paquets Docker CE officiels
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    force_apt_get: yes
+
+- name: S'assurer que le service Docker est démarré et activé au boot
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Récupérer la version pour validation
+  ansible.builtin.command: docker --version
+  register: docker_version
+  changed_when: false
+
+- name: Afficher la version installée
+  ansible.builtin.debug:
+    var: docker_version.stdout
+
+- name: Créer l'utilisateur docker-admin
+  ansible.builtin.user:
+    name: "{{ secrets.docker_admin.user }}"
+    uid: "{{ secrets.docker_admin.uid }}"
+    home: "{{ secrets.docker_admin.home }}"
+    groups: docker,sudo
+    append: yes
+    shell: /bin/bash
+    create_home: yes
+    password: "{{ secrets.docker_admin.password | password_hash('sha512') }}"
+    update_password: always
+    state: present
+  no_log: true
+  tags: user
+
+- name: Créer le répertoire .ssh pour docker-admin
+  ansible.builtin.file:
+    path: "{{ secrets.docker_admin.home }}/.ssh"
+    state: directory
+    mode: '0700'
+    owner: "{{ secrets.docker_admin.user }}"
+    group: "{{ secrets.docker_admin.user }}"
+
+- name: Ajouter la clé SSH pour docker-admin
+  ansible.builtin.copy:
+    dest: "{{ secrets.docker_admin.home }}/.ssh/authorized_keys"
+    content: "{{ secrets.ssh_key_homelab }}"
+    mode: '0600'
+    owner: "{{ secrets.docker_admin.user }}"
+    group: "{{ secrets.docker_admin.user }}"
+
+- name: Configurer sudo pour docker-admin (sans mot de passe)
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/docker-admin
+    content: |
+      {{ secrets.docker_admin.user }} ALL=(ALL) NOPASSWD:ALL
+    mode: "0440"
+    owner: root
+    group: root
+    validate: "visudo -cf %s"
+
+- name: Vérifier Docker
+  ansible.builtin.command: docker info
+  register: docker_test
+  changed_when: false
+  ignore_errors: yes
