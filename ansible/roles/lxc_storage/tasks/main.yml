@@ -32,10 +32,12 @@
 - name: Définir le mot de passe Samba pour {{ secrets.user.name }}
   ansible.builtin.shell: |
     set -o pipefail
-    (echo "{{ secrets.user.password }}"; echo "{{ secrets.user.password }}") | /usr/bin/smbpasswd -a {{ secrets.user.name }}
+    printf "%s\n%s\n" "{{ secrets.user.password }}" "{{ secrets.user.password }}" \
+      | /usr/bin/pdbedit -a -t -u {{ secrets.user.name }}
+  args:
+    executable: /bin/bash
   register: smbpasswd_result
-  changed_when: "'Added user' in smbpasswd_result.stdout"
-  failed_when: smbpasswd_result.rc != 0 and "'Adding user' not in smbpasswd_result.stdout"
+  changed_when: smbpasswd_result.rc == 0
   no_log: true
 
 - name: Configurer Samba

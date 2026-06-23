@@ -32,7 +32,6 @@
     marker: "# {mark} ANSIBLE MANAGED BLOCK - LXC PRIVILEGED MODE"
     insertafter: EOF
     create: true
-    mode: "0644"
   delegate_to: "{{ secrets.pve_host_ryzen }}"
   become: true
 

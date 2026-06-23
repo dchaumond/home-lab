@@ -57,7 +57,7 @@
 - name: Créer l'utilisateur docker-admin
   ansible.builtin.user:
     name: "{{ secrets.docker_admin.user }}"
-    uid: "{{ secrets.docker_admin.uid }}"
+    home: "{{ secrets.docker_admin.home }}"
     home: "{{ secrets.docker_admin.home }}"
     groups: docker,sudo
     append: true
