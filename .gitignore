@@ -23,13 +23,7 @@
 *.log
 **/.DS_Store
 
-# Dossiers de provisionning
-provisionning_nuc/
-provisionning_ryzen/
-
 # Fichiers spécifiques
-Modelfile*
 /opencode.jsonc
 /AGENTS.md
 PLAN-STEP*.md
-update_model.sh

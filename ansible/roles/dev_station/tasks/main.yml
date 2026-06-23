@@ -24,9 +24,8 @@
     groups: sudo,docker
     append: yes
     create_home: yes
-
-- name: Définir le mot de passe pour l'utilisateur dch
-  ansible.builtin.shell: "echo '{{ secrets.user.name }}:{{ secrets.user.password }}' | chpasswd"
+    password: "{{ secrets.user.password | password_hash('sha512') }}"
+    update_password: always
   no_log: true
 
 - name: Configurer sudo sans mot de passe pour dch

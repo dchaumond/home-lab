@@ -25,10 +25,3 @@
   register: docker_test
   changed_when: false
   ignore_errors: yes
-
-- name: Réinstaller Docker si nécessaire
-  ansible.builtin.apt:
-    name: docker.io
-    state: present
-    update_cache: yes
-  when: docker_test is defined and docker_test.rc != 0

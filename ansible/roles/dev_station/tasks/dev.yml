@@ -63,7 +63,7 @@
   args:
     creates: "{{ ansible_user_dir }}/.cargo/bin/rustc"
   become: yes
-  become_user: dch
+  become_user: "{{ secrets.user.name }}"
 
 - name: Ajouter les binaires Rust au PATH de l'utilisateur dch
   ansible.builtin.lineinfile:
