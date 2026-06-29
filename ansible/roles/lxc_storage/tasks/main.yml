@@ -86,6 +86,9 @@
     path: "{{ secrets.minio.storage_mount_minio_dest }}"
     state: directory
     mode: '0777'
+    owner: "{{ secrets.user.name }}"
+    group: "{{ secrets.user.name }}"
+    recurse: true
 
 - name: Créer le fichier de configuration systemd pour MinIO
   ansible.builtin.copy:
@@ -132,3 +135,4 @@
     name: minio
     state: started
     enabled: true
+    daemon_reload: true

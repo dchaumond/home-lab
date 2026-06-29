@@ -32,6 +32,7 @@ module "apps2_runner_ryzen" {
   # Features pour Docker
   features = {
     nesting = true  # Requis pour Docker
+    keyctl  = true  # Support du kernel keyring
   }
 
   # Ressources CPU (2 cœurs)
