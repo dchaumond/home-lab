@@ -91,6 +91,11 @@
             content: |
               [Service]
               Environment="OLLAMA_HOST=0.0.0.0"
+              Environment="HSA_OVERRIDE_GFX_VERSION=11.0.0"
+              Environment="HSA_ENABLE_SDMA=0"
+              Environment="AMD_SERIAL_EXECUTION=1"
+              Environment="OLLAMA_NUM_PARALLEL=1"
+              Environment="OLLAMA_KEEP_ALIVE={{ secrets.ai_node.ollama_keep_alive }}"
             mode: "0644"
           notify: restart ollama
 
