@@ -58,7 +58,7 @@ variable "protection" {
 variable "start_on_boot" {
   description = "Démarrer automatiquement au démarrage du nœud Proxmox"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "template" {
