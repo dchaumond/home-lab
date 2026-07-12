@@ -1,0 +1,8 @@
+# Fichier ajouté par le firmware Merlin à la configuration dnsmasq
+# Géré par Ansible - NE PAS MODIFIER À LA MAIN
+# Mis à jour le : {{ ansible_date_time.date if ansible_date_time is defined else 'N/A' }}
+
+# Réservations DNS pour IPs virtuelles (HA)
+{% for vip in router.vips %}
+host-record={{ vip.hostname }},{{ vip.ip }}
+{% endfor %}

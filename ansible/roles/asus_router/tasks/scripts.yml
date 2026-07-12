@@ -1,0 +1,14 @@
+---
+- name: Créer le répertoire /opt/scripts sur le routeur
+  ansible.builtin.raw: test -d /opt/scripts || mkdir -p /opt/scripts
+  changed_when: false
+  tags: scripts
+
+- name: Déployer les scripts Entware
+  ansible.builtin.raw: |
+    cat > /opt/scripts/{{ item | basename }} << 'SCRIPTEOF'
+    {{ lookup('ansible.builtin.file', 'files/' + item) }}
+    SCRIPTEOF
+  loop: "{{ router.scripts | default([]) }}"
+  changed_when: true
+  tags: scripts

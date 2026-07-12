@@ -1,0 +1,9 @@
+---
+- name: Déployer nginx.conf sur le routeur
+  ansible.builtin.raw: |
+    cat > /opt/etc/nginx/nginx.conf << 'EOF'
+    {{ lookup('ansible.builtin.template', 'nginx.conf.j2') }}
+    EOF
+  notify: Redémarrer nginx
+  changed_when: true
+  tags: nginx

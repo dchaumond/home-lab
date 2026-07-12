@@ -1,0 +1,12 @@
+---
+- name: Déployer la configuration nginx
+  ansible.builtin.import_tasks: nginx.yml
+  tags: nginx
+
+- name: Déployer les réservations DNS pour VIP
+  ansible.builtin.import_tasks: dhcp_vip.yml
+  tags: dhcp_vip
+
+- name: Déployer les scripts Entware
+  ansible.builtin.import_tasks: scripts.yml
+  tags: scripts

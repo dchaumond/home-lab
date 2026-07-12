@@ -1,0 +1,6 @@
+---
+router:
+  nginx_port: 8081
+  nginx_proxy_api:
+    active: old
+  scripts: []

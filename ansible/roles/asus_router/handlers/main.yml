@@ -1,0 +1,6 @@
+---
+- name: Redémarrer nginx
+  ansible.builtin.raw: /opt/etc/init.d/S80nginx restart
+
+- name: Redémarrer dnsmasq
+  ansible.builtin.raw: service restart_dnsmasq

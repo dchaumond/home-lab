@@ -1,0 +1,9 @@
+---
+- name: Déployer dnsmasq.conf.add pour les VIP
+  ansible.builtin.raw: |
+    cat > /jffs/configs/dnsmasq.conf.add << 'EOF'
+    {{ lookup('ansible.builtin.template', 'dnsmasq.conf.add.j2') }}
+    EOF
+  notify: Redémarrer dnsmasq
+  changed_when: true
+  tags: dhcp_vip

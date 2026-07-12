@@ -1,0 +1,8 @@
+---
+- name: Configurer le routeur ASUS RT-AC86U (firmware Merlin)
+  hosts: asus_routers
+  gather_facts: false
+  vars:
+    router: "{{ secrets.router }}"
+  roles:
+    - role: asus_router
