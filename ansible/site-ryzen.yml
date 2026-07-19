@@ -28,12 +28,6 @@
   roles:
     - role: apps_runner
 
-- name: Configurer le conteneur HA Runner (privileged)
-  hosts: lxc_ha_runner_ryzen
-  become: true
-  roles:
-    - role: ha_runner
-
 - name: Configurer le conteneur Home Automation
   hosts: lxc_home_automation_ryzen
   become: true
