@@ -16,6 +16,8 @@
       - htop
       - glances
       - sysstat
+      - sshfs
+      - fuse3
       - ansible
     state: present
     update_cache: true

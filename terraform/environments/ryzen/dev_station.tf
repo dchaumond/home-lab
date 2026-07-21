@@ -31,6 +31,7 @@ module "dev_station_ryzen" {
 
   features = {
     nesting = true
+    fuse    = true
   }
 
   cpu_cores       = local.secrets.dev_station_ryzen.cpu_cores
