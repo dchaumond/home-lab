@@ -1,0 +1,5 @@
+# Prioritise les paquets du dépôt officiel AMD ROCm
+# sur ceux d'Ubuntu (versioning différent : 1.0.0 vs 5.7.1)
+Package: *
+Pin: origin repo.radeon.com
+Pin-Priority: 600

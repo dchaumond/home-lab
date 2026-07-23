@@ -40,14 +40,35 @@
 
     - name: Ajouter le dépôt ROCm
       ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.asc] https://repo.radeon.com/rocm/apt/{{ rocm_version }} noble main"
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.asc] https://repo.radeon.com/rocm/apt/{{ rocm_version }} ubuntu main"
         state: present
         filename: rocm
         update_cache: true
 
-    - name: Installer uniquement rocminfo (sans dépendances conflictuelles)
+    - name: Prioriser le dépôt AMD ROCm sur les paquets Ubuntu
+      ansible.builtin.copy:
+        src: rocm-preferences
+        dest: /etc/apt/preferences.d/rocm
+        mode: "0644"
+
+    - name: Purger les paquets ROCm fournis par Ubuntu (conflit de version)
       ansible.builtin.apt:
-        name: rocminfo
+        name:
+          - rocminfo
+          - libhsa-runtime64-1
+          - libhsakmt1
+        state: absent
+        purge: true
+        autoremove: true
+        update_cache: true
+
+    - name: Installer le runtime ROCm (HIP + OpenCL + SMI + HIPCC)
+      ansible.builtin.apt:
+        name:
+          - rocm-hip-runtime
+          - rocm-opencl-runtime
+          - rocm-smi-lib
+          - hipcc
         state: present
         update_cache: true
 
