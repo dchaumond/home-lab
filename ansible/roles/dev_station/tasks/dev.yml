@@ -26,6 +26,50 @@
     state: present
     update_cache: true
 
+- name: "RTK | Installer via le script officiel"  # noqa: command-instead-of-module risky-shell-pipe
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+  args:
+    creates: "/home/{{ secrets.user.name }}/.local/bin/rtk"
+    executable: /bin/bash
+  become: true
+  become_user: "{{ secrets.user.name }}"
+
+- name: "RTK | Ajouter ~/.local/bin au PATH"
+  ansible.builtin.lineinfile:
+    path: "/home/{{ secrets.user.name }}/.bashrc"
+    line: 'export PATH="$HOME/.local/bin:$PATH"'
+    regexp: '^export PATH=.*\.local/bin.*'
+    insertafter: EOF
+
+- name: "OpenCode | Installer via le script officiel"  # noqa: command-instead-of-module risky-shell-pipe
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://opencode.ai/install | bash
+  args:
+    creates: "/home/{{ secrets.user.name }}/.opencode/bin/opencode"
+    executable: /bin/bash
+  become: true
+  become_user: "{{ secrets.user.name }}"
+
+- name: "OpenCode | Ajouter ~/.opencode/bin au PATH"
+  ansible.builtin.lineinfile:
+    path: "/home/{{ secrets.user.name }}/.bashrc"
+    line: 'export PATH="$HOME/.opencode/bin:$PATH"'
+    regexp: '^export PATH=.*\.opencode/bin.*'
+    insertafter: EOF
+
+- name: "RTK + OpenCode | rtk init -g --opencode"  # noqa: command-instead-of-module risky-shell-pipe
+  ansible.builtin.shell: |
+    set -o pipefail
+    yes "" | /home/{{ secrets.user.name }}/.local/bin/rtk init -g --opencode
+  args:
+    creates: "/home/{{ secrets.user.name }}/.config/opencode/plugins/rtk.ts"
+    executable: /bin/bash
+  become: true
+  become_user: "{{ secrets.user.name }}"
+
 - name: Ajouter le dépôt NodeSource pour Node.js 20.x
   ansible.builtin.shell: |
     set -o pipefail
