@@ -1,0 +1,23 @@
+---
+- name: Initialiser le nœud Proxmox NUC (SSD + stockage + templates)
+  hosts: proxmox_nuc
+  roles:
+    - role: init_nuc
+
+- name: Configurer le conteneur DevStation NUC
+  hosts: lxc_devstation_nuc
+  become: true
+  roles:
+    - role: dev_station
+
+- name: Configurer le conteneur Apps Runner NUC
+  hosts: lxc_apps_runner_nuc
+  become: true
+  roles:
+    - role: apps_runner
+
+- name: Configurer le conteneur Home Automation NUC
+  hosts: lxc_home_automation_nuc
+  become: true
+  roles:
+    - role: apps_runner

@@ -1,0 +1,53 @@
+---
+- name: Vérifier la présence du SSD
+  ansible.builtin.stat:
+    path: "{{ ssd_device }}"
+  register: ssd_stat
+
+- name: Échouer si le SSD est absent
+  ansible.builtin.fail:
+    msg: "Le périphérique {{ ssd_device }} est introuvable"
+  when: not ssd_stat.stat.exists
+
+- name: Vérifier les signatures LVM sur le SSD
+  ansible.builtin.command: blkid -o value -s TYPE {{ ssd_device }}
+  register: ssd_fs
+  changed_when: false
+  failed_when: false
+
+- name: Désactiver l'ancien volume group LVM si présent
+  ansible.builtin.command: vgchange -an local-ssd
+  when: ssd_fs.stdout == "LVM2_member"
+  changed_when: true
+  failed_when: false
+
+- name: Nettoyer les signatures existantes (ancien LVM, etc.)
+  ansible.builtin.command: wipefs -a {{ ssd_device }}
+  when: ssd_fs.stdout != "" and ssd_fs.stdout != "ext4"
+  changed_when: true
+
+- name: Formater le SSD en ext4
+  ansible.builtin.command: mkfs.ext4 {{ ssd_device }}
+  when: ssd_fs.stdout != "ext4"
+  changed_when: true
+
+- name: Créer le point de montage
+  ansible.builtin.file:
+    path: "{{ backup_mount }}"
+    state: directory
+    mode: "0755"
+
+- name: Récupérer l'UUID du SSD
+  ansible.builtin.command: blkid -o value -s UUID {{ ssd_device }}
+  register: ssd_uuid
+  changed_when: false
+
+- name: Monter le SSD via fstab
+  ansible.posix.mount:  # noqa: fqcn[canonical]
+    path: "{{ backup_mount }}"
+    src: "UUID={{ ssd_uuid.stdout }}"
+    fstype: ext4
+    opts: defaults
+    state: mounted
+    dump: "0"
+    passno: "2"

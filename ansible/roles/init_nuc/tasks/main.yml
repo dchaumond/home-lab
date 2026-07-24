@@ -1,0 +1,9 @@
+---
+- name: Initialiser le SSD
+  ansible.builtin.import_tasks: ssd.yml
+
+- name: Ajouter le stockage Proxmox
+  ansible.builtin.import_tasks: storage.yml
+
+- name: Télécharger les templates
+  ansible.builtin.import_tasks: templates.yml

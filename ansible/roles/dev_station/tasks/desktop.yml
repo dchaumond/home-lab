@@ -55,6 +55,15 @@
     mode: '0755'
   tags: desktop
 
+- name: Créer le répertoire Desktop pour l'utilisateur
+  ansible.builtin.file:
+    path: "/home/{{ secrets.user.name }}/Desktop"
+    state: directory
+    owner: "{{ secrets.user.name }}"
+    group: "{{ secrets.user.name }}"
+    mode: '0755'
+  tags: desktop
+
 - name: Ajouter les launchers au bureau de l'utilisateur
   ansible.builtin.copy:
     src: "/home/{{ secrets.user.name }}/.local/share/applications/{{ item }}"

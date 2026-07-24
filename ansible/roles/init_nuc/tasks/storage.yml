@@ -1,0 +1,13 @@
+---
+- name: Vérifier si le stockage Proxmox existe déjà
+  ansible.builtin.command: pvesm status
+  register: pvesm_status
+  changed_when: false
+
+- name: Ajouter le stockage local-backup
+  ansible.builtin.command: >
+    pvesm add dir {{ storage_name }}
+    --path {{ backup_mount }}
+    --content backup,vztmpl,iso
+  when: "storage_name not in pvesm_status.stdout"
+  changed_when: true

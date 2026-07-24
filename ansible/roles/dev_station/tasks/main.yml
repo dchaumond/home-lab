@@ -38,6 +38,22 @@
     group: root
     validate: "visudo -cf %s"
 
+- name: Créer le répertoire .ssh pour dch
+  ansible.builtin.file:
+    path: "/home/{{ secrets.user.name }}/.ssh"
+    state: directory
+    mode: "0700"
+    owner: "{{ secrets.user.name }}"
+    group: "{{ secrets.user.name }}"
+
+- name: Ajouter la clé SSH pour dch
+  ansible.builtin.copy:
+    dest: "/home/{{ secrets.user.name }}/.ssh/authorized_keys"
+    content: "{{ secrets.ssh_key_homelab }}"
+    mode: "0600"
+    owner: "{{ secrets.user.name }}"
+    group: "{{ secrets.user.name }}"
+
 - name: Inclure le socle Docker (installation + user docker-admin)
   ansible.builtin.include_role:
     name: docker_base

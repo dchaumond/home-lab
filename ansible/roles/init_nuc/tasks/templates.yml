@@ -1,0 +1,17 @@
+---
+- name: Mettre à jour la liste des templates disponibles
+  ansible.builtin.command: pveam update
+  changed_when: false
+
+- name: Lister les templates déjà téléchargés
+  ansible.builtin.find:
+    paths: /var/lib/vz/template/cache
+    patterns: "*.tar.zst"
+  register: templates_existants
+
+- name: Télécharger les templates manquants
+  ansible.builtin.command: pveam download local {{ item }}
+  loop: "{{ proxmox_templates }}"
+  when: "item not in (templates_existants.files | map(attribute='path') | map('basename') | list)"
+  register: template_download
+  changed_when: template_download.rc == 0

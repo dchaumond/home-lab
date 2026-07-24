@@ -19,6 +19,10 @@
       - sshfs
       - fuse3
       - ansible
+      - tmux
+      - socat
+      - p7zip
+      - p7zip-full
     state: present
     update_cache: true
 

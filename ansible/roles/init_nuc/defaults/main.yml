@@ -1,0 +1,7 @@
+---
+ssd_device: /dev/sda
+backup_mount: /mnt/backup
+storage_name: local-backup
+proxmox_templates:
+  - debian-12-standard_12.12-1_amd64.tar.zst
+  - ubuntu-24.04-standard_24.04-2_amd64.tar.zst

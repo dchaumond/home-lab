@@ -1,13 +1,10 @@
 module "dev_station_nuc" {
   source = "../../modules/lxc"
-  providers = {
-    proxmox = proxmox.nuc
-  }
 
   node_name           = local.secrets.pve_node_nuc
   vm_id               = local.secrets.dev_station_nuc.ct_id
   hostname            = local.secrets.dev_station_nuc.hostname
-  tags                = ["dev", "station"]
+  tags                = ["dev", "nuc"]
 
   os_template_file_id = "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
   os_type             = "debian"
@@ -16,7 +13,7 @@ module "dev_station_nuc" {
   root_password   = local.secrets.root_password
 
   disk_datastore_id = "local-lvm"
-  disk_size         = 30
+  disk_size         = local.secrets.dev_station_nuc.disk_size
 
   ip_configs = [{
     ipv4 = {
@@ -26,17 +23,19 @@ module "dev_station_nuc" {
   }]
 
   network_interfaces = [{
-    name   = "eth0"
-    bridge = "vmbr0"
+    name        = "eth0"
+    bridge      = "vmbr0"
+    mac_address = local.secrets.dev_station_nuc.mac_address
   }]
 
   unprivileged = false
 
   features = {
-    nesting = false
-    mount   = ["nfs", "cifs"]
+    nesting = true
+    fuse    = true
   }
 
-  cpu_cores = 4
-  memory_dedicated = 4096
+  cpu_cores       = local.secrets.dev_station_nuc.cpu_cores
+  memory_dedicated = local.secrets.dev_station_nuc.memory
+  memory_swap      = local.secrets.dev_station_nuc.memory_swap
 }
