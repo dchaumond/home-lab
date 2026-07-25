@@ -7,3 +7,19 @@
   notify: Redémarrer dnsmasq
   changed_when: true
   tags: dhcp_vip
+
+- name: Déployer hosts.add pour résolution locale sur le routeur
+  ansible.builtin.raw: |
+    cat > /jffs/configs/hosts.add << 'EOF'
+    # VIPs gérés par Ansible
+    {% for vip in router.vips %}
+    {{ vip.ip }} {{ vip.hostname }}
+    {% endfor %}
+    EOF
+    # Appliquer immédiatement dans /etc/hosts
+    {% for vip in router.vips %}
+    sed -i "/\b{{ vip.hostname }}\b/d" /etc/hosts 2>/dev/null
+    echo "{{ vip.ip }} {{ vip.hostname }}" >> /etc/hosts
+    {% endfor %}
+  changed_when: true
+  tags: dhcp_vip
