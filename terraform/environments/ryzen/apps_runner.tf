@@ -25,6 +25,7 @@ module "apps_runner_ryzen" {
   network_interfaces = [{
     name    = "eth0"
     bridge  = "vmbr0"
+    mac_address = local.secrets.apps_runner_ryzen.mac_address
   }]
 
   unprivileged = true  # Mode unprivileged

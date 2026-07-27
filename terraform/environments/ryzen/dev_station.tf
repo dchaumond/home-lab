@@ -25,6 +25,7 @@ module "dev_station_ryzen" {
   network_interfaces = [{
     name   = "eth0"
     bridge = "vmbr0"
+    mac_address = local.secrets.dev_station_ryzen.mac_address
   }]
 
   unprivileged = false

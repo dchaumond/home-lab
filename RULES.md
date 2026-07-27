@@ -102,7 +102,7 @@ Ce document décrit les règles de codage et bonnes pratiques à suivre pour les
   groups dch                            # Groupes de l'utilisateur
   ```
 
-- **Depuis un client RDP** : Se connecter à l'IP de `dev-station-ryzen` (ex: `192.168.1.40`).
+- **Depuis un client RDP** : Se connecter à l'IP de `dev-station-ryzen` (ex: `192.168.1.11`).
 
 ##### **5. Dépannage**
 | Problème                          | Solution                                                                                     |

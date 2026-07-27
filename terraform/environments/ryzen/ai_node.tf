@@ -25,6 +25,7 @@ module "ai_node" {
   network_interfaces = [{
     name   = "eth0"
     bridge = "vmbr0"
+    mac_address = local.secrets.ai_node.mac_address
   }]
 
   unprivileged = false
