@@ -2,5 +2,5 @@
 router:
   nginx_port: 8081
   nginx_proxy_api:
-    active: old
+    url: http://home-automation:8123/api/
   scripts: []

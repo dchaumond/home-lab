@@ -34,6 +34,7 @@ http {
     #gzip  on;
 
     access_log  /opt/var/log/nginx/access.log;
+    resolver 127.0.0.1 valid=30s;
 
     # HTTPS reverse proxies
     server {
@@ -57,16 +58,14 @@ http {
         #}
 
         location /api/ {
-{% set proxy_url = router.nginx_proxy_api['url_' ~ router.nginx_proxy_api.active | default('old')] %}
-{% if router.nginx_proxy_api.active is defined and router.nginx_proxy_api.active == "new" %}
             set $auth_token $http_authorization;
             if ($http_authorization = "Bearer {{ router.nginx_proxy_api.token_old }}") {
                 set $auth_token "Bearer {{ router.nginx_proxy_api.token_new }}";
             }
             proxy_set_header Authorization $auth_token;
-{% endif %}
 
-            proxy_pass {{ proxy_url }};
+            set $ha_url "{{ router.nginx_proxy_api.url }}";
+            proxy_pass $ha_url;
             proxy_redirect off;
             proxy_set_header Host $host:$server_port;
             proxy_set_header X-Real-IP $remote_addr;
