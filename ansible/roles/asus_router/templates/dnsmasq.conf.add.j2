@@ -5,4 +5,7 @@
 # Réservations DNS pour IPs virtuelles (HA)
 {% for vip in router.vips %}
 host-record={{ vip.hostname }},{{ vip.ip }}
+{% for alias in vip.aliases | default([]) %}
+host-record={{ alias }},{{ vip.ip }}
+{% endfor %}
 {% endfor %}

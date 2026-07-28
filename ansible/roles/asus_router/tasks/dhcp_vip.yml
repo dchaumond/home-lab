@@ -13,13 +13,13 @@
     cat > /jffs/configs/hosts.add << 'EOF'
     # VIPs gérés par Ansible
     {% for vip in router.vips %}
-    {{ vip.ip }} {{ vip.hostname }}
+    {{ vip.ip }} {{ vip.hostname }} {{ vip.aliases | default([]) | join(' ') }}
     {% endfor %}
     EOF
     # Appliquer immédiatement dans /etc/hosts
     {% for vip in router.vips %}
     sed -i "/\b{{ vip.hostname }}\b/d" /etc/hosts 2>/dev/null
-    echo "{{ vip.ip }} {{ vip.hostname }}" >> /etc/hosts
+    echo "{{ vip.ip }} {{ vip.hostname }} {{ vip.aliases | default([]) | join(' ') }}" >> /etc/hosts
     {% endfor %}
   changed_when: true
   tags: dhcp_vip
